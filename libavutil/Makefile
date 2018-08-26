@@ -20,6 +20,7 @@ HEADERS = adler32.h                                                     \
           common.h                                                      \
           cpu.h                                                         \
           crc.h                                                         \
+          debug.h                                                       \
           des.h                                                         \
           dict.h                                                        \
           display.h                                                     \
@@ -104,6 +105,7 @@ OBJS = adler32.o                                                        \
        color_utils.o                                                    \
        cpu.o                                                            \
        crc.o                                                            \
+       debug.o                                                          \
        des.o                                                            \
        dict.o                                                           \
        display.o                                                        \

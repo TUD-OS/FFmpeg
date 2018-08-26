@@ -29,6 +29,8 @@
 
 #include <stdint.h>
 
+#include "libavutil/debug.h"
+
 #include "cabac.h"
 #include "config.h"
 
@@ -134,6 +136,21 @@ static int av_noinline av_unused get_cabac_noinline(CABACContext *c, uint8_t * c
 
 static int av_unused get_cabac(CABACContext *c, uint8_t * const state){
     return get_cabac_inline(c,state);
+}
+
+
+static int av_unused get_cabac2(CABACContext *c, uint8_t * const state, AVStatsContext* stats)
+{
+    int result;
+
+    int64_t* cabac = &stats->cabac_time;
+    FFMPEG_TIME_BEGINN(cabac);
+
+    result = get_cabac_inline(c,state);
+
+    FFMPEG_TIME_END(cabac);
+
+    return result;
 }
 
 #ifndef get_cabac_bypass

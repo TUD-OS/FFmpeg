@@ -30,6 +30,8 @@
 #include <signal.h>
 #include <stdint.h>
 
+#include "libavutil/debug.h"
+
 #include "libavutil/avstring.h"
 #include "libavutil/eval.h"
 #include "libavutil/mathematics.h"
@@ -3732,7 +3734,9 @@ int main(int argc, char **argv)
         do_exit(NULL);
     }
 
+    avpriv_init_log(input_filename);
     event_loop(is);
+    avpriv_finalize_log();
 
     /* never returns */
 

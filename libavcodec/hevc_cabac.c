@@ -556,7 +556,12 @@ int ff_hevc_cabac_init(HEVCContext *s, int ctb_addr_ts)
     return 0;
 }
 
+
+#ifdef MEASURE_CABAC
+#define GET_CABAC(ctx) get_cabac2(&s->HEVClc->cc, &s->HEVClc->cabac_state[ctx], &s->statsctx)
+#else
 #define GET_CABAC(ctx) get_cabac(&s->HEVClc->cc, &s->HEVClc->cabac_state[ctx])
+#endif
 
 int ff_hevc_sao_merge_flag_decode(HEVCContext *s)
 {

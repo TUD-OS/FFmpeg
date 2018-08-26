@@ -25,6 +25,7 @@
 
 #include "libavutil/attributes.h"
 #include "libavutil/common.h"
+#include "libavutil/debug.h"
 #include "libavutil/display.h"
 #include "libavutil/internal.h"
 #include "libavutil/mastering_display_metadata.h"
@@ -3163,6 +3164,8 @@ static int hevc_decode_extradata(HEVCContext *s, uint8_t *buf, int length, int f
     return 0;
 }
 
+static int frame_number = 0;
+
 static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
                              AVPacket *avpkt)
 {
@@ -3170,6 +3173,16 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
     int new_extradata_size;
     uint8_t *new_extradata;
     HEVCContext *s = avctx->priv_data;
+
+    char msg[32];
+    int frame_num;
+    // int frame_num = avctx->frame_number + 1; // Does not work as expected, returns "0" 3 times at te beginning
+    AVStatsContext* stats = avpriv_reset_stats_ctx(&s->statsctx);
+    int64_t* frame = &stats->frame_time;
+
+    frame_number++;
+    frame_num = frame_number;
+    FFMPEG_TIME_BEGINN(frame);
 
     if (!avpkt->size) {
         ret = ff_hevc_output_frame(s, data, 1);
@@ -3222,6 +3235,16 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
         av_frame_move_ref(data, s->output_frame);
         *got_output = 1;
     }
+
+    stats->frame_number = frame_num;
+    FFMPEG_TIME_END(frame);
+    // This only affects the most recent slice of the frame!
+    stats->slice_type = s->sh.slice_type;
+
+    avpriv_log_stats_ctx(stats);
+
+    snprintf(msg, 32, "%d ", frame_num);
+    avpriv_log_info(msg);
 
     return avpkt->size;
 }

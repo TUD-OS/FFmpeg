@@ -36,3 +36,12 @@
 /lcov/
 /src
 /mapfile
+
+/callgrind*
+/vgcore.*
+/ffmpeg.config
+/ffmpeg.creator
+/ffmpeg.files
+/ffmpeg.includes
+*.user
+/log/
