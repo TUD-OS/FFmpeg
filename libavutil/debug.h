@@ -80,14 +80,14 @@ static av_always_inline av_unused void avpriv_get_thread_time(struct timespec* t
 
 static av_always_inline av_unused void avpriv_calc_timespan(struct timespec* result, struct timespec* start_time, struct timespec* end_time)
 {
-	long secs, nsecs;
-	if ((end_time->tv_nsec - start_time->tv_nsec) < 0) {
-		secs = end_time->tv_sec - start_time->tv_sec - 1;
-		nsecs = 1000000000 + end_time->tv_nsec - start_time->tv_nsec;
-	} else {
-		secs = end_time->tv_sec - start_time->tv_sec;
-		nsecs = end_time->tv_nsec - start_time->tv_nsec;
-	}
+    long secs, nsecs;
+    if ((end_time->tv_nsec - start_time->tv_nsec) < 0) {
+        secs = end_time->tv_sec - start_time->tv_sec - 1;
+        nsecs = 1000000000 + end_time->tv_nsec - start_time->tv_nsec;
+    } else {
+        secs = end_time->tv_sec - start_time->tv_sec;
+        nsecs = end_time->tv_nsec - start_time->tv_nsec;
+    }
 
     av_assert0(secs >= 0);
     av_assert0(nsecs >= 0);
