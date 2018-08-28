@@ -27,7 +27,7 @@ void avpriv_log_stats_ctx(AVStatsContext* ctx)
     ctx->cabac_time = rtdsc_to_ns(ctx->cabac_time);
     ctx->frame_time = rtdsc_to_ns(ctx->frame_time);
 #endif
-#ifdef PRINT_MS
+#if PRINT_MS
     snprintf(line, LOG_LINE_LENGTH, "%d, %ld, %ld, %d", ctx->frame_number, ns_to_ms(ctx->frame_time), ns_to_ms(ctx->cabac_time), ctx->slice_type);
 #else
     snprintf(line, LOG_LINE_LENGTH, "%d, %ld, %ld, %d", ctx->frame_number, ctx->frame_time, ctx->cabac_time, ctx->slice_type);

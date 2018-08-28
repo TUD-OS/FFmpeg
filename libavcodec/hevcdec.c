@@ -3236,10 +3236,10 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
         *got_output = 1;
     }
 
-    stats->frame_number = frame_num;
     FFMPEG_TIME_END(frame);
+    FFMPEG_EXTRAKT_METRICS(stats->frame_number = frame_num);
     // This only affects the most recent slice of the frame!
-    stats->slice_type = s->sh.slice_type;
+    FFMPEG_EXTRAKT_METRICS(stats->slice_type = s->sh.slice_type);
 
     avpriv_log_stats_ctx(stats);
 

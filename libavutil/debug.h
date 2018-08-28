@@ -8,9 +8,25 @@
 #include "libavutil/avassert.h"
 #include "libavutil/log.h"
 
-#define USE_RDTSC
-#define MEASURE_CABAC
-#define PRINT_MS_
+/* ******** BEGIN GLOBAL CONFIGURATION ******** */
+
+/* Whether to extract metrics at all*/
+#define EXTRACT_METRICS 1
+
+/* Weather to measure computing times at all */
+#define MEASURE_TIME 1
+
+/* Use RDTSC for time measurements, much faster than the default
+ * implementation based on clock_gettime */
+#define USE_RDTSC 1
+
+/* Whether to measure cabac related times, creates large overhead if enabled */
+#define MEASURE_CABAC 1
+
+/* Print times in milliseconds rather than nanoseconds */
+#define PRINT_MS 0
+
+/* ******** END GLOBAL CONFIGURATION ******** */
 
 #ifdef USE_RDTSC
 #include "libavutil/x86/timer.h"
@@ -19,9 +35,13 @@
 typedef struct
 {
     int frame_number;
+
+    // Metrics
+    int slice_type;
+
+    // Time measurements
     int64_t frame_time;
     int64_t cabac_time;
-    int slice_type;
 } AVStatsContext;
 
 AVStatsContext* avpriv_reset_stats_ctx(AVStatsContext* ctx);
@@ -107,7 +127,12 @@ static av_always_inline av_unused int64_t rtdsc_to_ns(int64_t cycles) {
     return (int64_t)((double)(cycles) / 1.6);
 }
 
-#ifdef USE_RDTSC
+#if EXTRACT_METRICS
+#define FFMPEG_EXTRAKT_METRICS(x) x
+#endif // EXTRACT_METRICS
+
+#if MEASURE_TIME
+#if USE_RDTSC
 #define FFMPEG_TIME_BEGINN(measurement)  \
     uint64_t start_time_##measurement = AV_READ_TIME();
 
@@ -120,7 +145,11 @@ static av_always_inline av_unused int64_t rtdsc_to_ns(int64_t cycles) {
 
 #define FFMPEG_TIME_END(measurement) \
     *measurement += avpriv_calc_timespan_now_ns(&start_time_##measurement)
-#endif
+#endif // USE_RDTSC
+#else
+#define FFMPEG_TIME_BEGINN(measurement)
+#define FFMPEG_TIME_END(measurement)
+#endif // MEASURE_TIME
 
 
 
