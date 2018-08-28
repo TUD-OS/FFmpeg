@@ -44,8 +44,8 @@ static av_always_inline av_unused void avpriv_log_error(const char* message)
 static av_always_inline av_unused void avpriv_log_errno(const char *message)
 {
     char* errno_msg = strerror(errno);
-    char msg[300];
-    snprintf(msg, 300, "%s: %s", message, errno_msg);
+    char msg[512];
+    snprintf(msg, 512, "%s: %s", message, errno_msg);
     avpriv_log_error(msg);
 }
 

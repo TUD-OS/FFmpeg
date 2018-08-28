@@ -51,7 +51,9 @@ void avpriv_init_log(const char* input_file)
     logfile_ = fopen(logfile_name_, "w");
 
     if (logfile_ == NULL) {
-        avpriv_log_errno("Could not open logfile");
+        char msg [384];
+        snprintf(msg, 384, "Could not open logfile \"%s\"", logfile_name_);
+        avpriv_log_errno(msg);
         exit(EXIT_FAILURE);
     }
     avpriv_log("frame_num, complete, cabac, slice_type");
