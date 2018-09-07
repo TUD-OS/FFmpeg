@@ -20,8 +20,13 @@
  * implementation based on clock_gettime */
 #define USE_RDTSC 1
 
+/* Base frequency of the local CPU, only used on RDTSC time measureing */
+#define CPU_BASE_FREQ 4.0
+
 /* Whether to measure cabac related times, creates large overhead if enabled */
+#if MEASURE_TIME
 #define MEASURE_CABAC 1
+#endif
 
 /* Print times in milliseconds rather than nanoseconds */
 #define PRINT_MS 0
@@ -34,14 +39,24 @@
 
 typedef struct
 {
-    int frame_number;
+    uint64_t frame_number;
 
     // Metrics
     int slice_type;
+    uint32_t slice_size;
+    uint32_t cabac_size;
+    uint32_t pixel_count;
+    uint32_t cu_count;
+    uint32_t intra_cu_count;
+    uint32_t inter_cu_count;
+    uint32_t pcm_cu_count;
 
     // Time measurements
-    int64_t frame_time;
-    int64_t cabac_time;
+    uint64_t frame_time;
+    uint64_t cabac_time;
+    uint64_t sao_param_time;
+    uint64_t cu_time;
+    uint64_t pcm_cu_time;
 } AVStatsContext;
 
 AVStatsContext* avpriv_reset_stats_ctx(AVStatsContext* ctx);
@@ -120,15 +135,17 @@ static av_always_inline av_unused int64_t avpriv_calc_timespan_now_ns(struct tim
 
 static av_always_inline av_unused int64_t ns_to_ms(int64_t ns)
 {
-    return (int64_t)((double)(ns)/1000000.0);
+    return (double)(ns)/1000000.0;
 }
 
 static av_always_inline av_unused int64_t rtdsc_to_ns(int64_t cycles) {
-    return (int64_t)((double)(cycles) / 1.6);
+    return (double)(cycles) / CPU_BASE_FREQ;
 }
 
 #if EXTRACT_METRICS
 #define FFMPEG_EXTRAKT_METRICS(x) x
+#else
+#define FFMPEG_EXTRAKT_METRICS(x)
 #endif // EXTRACT_METRICS
 
 #if MEASURE_TIME
@@ -151,6 +168,9 @@ static av_always_inline av_unused int64_t rtdsc_to_ns(int64_t cycles) {
 #define FFMPEG_TIME_END(measurement)
 #endif // MEASURE_TIME
 
-
-
+#if MEASURE_CABAC
+#define FFMPEG_MEASURE_CABAC(x) x
+#else
+#define FFMPEG_MEASURE_CABAC(x)
+#endif // MEASURE_CABAC
 #endif // AVUTIL_DEBUG_H

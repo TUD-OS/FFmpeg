@@ -143,7 +143,7 @@ static int av_unused get_cabac2(CABACContext *c, uint8_t * const state, AVStatsC
 {
     int result;
 
-    int64_t* cabac = &stats->cabac_time;
+    uint64_t* cabac = &stats->cabac_time;
     FFMPEG_TIME_BEGINN(cabac);
 
     result = get_cabac_inline(c,state);
