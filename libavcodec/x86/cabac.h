@@ -23,6 +23,7 @@
 
 #include "libavcodec/cabac.h"
 #include "libavutil/attributes.h"
+#include "libavutil/debug.h"
 #include "libavutil/macros.h"
 #include "libavutil/x86/asm.h"
 #include "config.h"
@@ -256,7 +257,13 @@ static av_always_inline int get_cabac_bypass_sign_x86(CABACContext *c, int val)
     return val;
 }
 
+
+#if MEASURE_CABAC
+#define get_cabac_bypass get_cabac_bypass_x86_2
+#else
 #define get_cabac_bypass get_cabac_bypass_x86
+#endif
+
 static av_always_inline int get_cabac_bypass_x86(CABACContext *c)
 {
     x86_reg tmp;
@@ -294,6 +301,17 @@ static av_always_inline int get_cabac_bypass_x86(CABACContext *c)
         : "%eax", "%ecx", "memory"
     );
     return res;
+}
+
+static av_always_inline int get_cabac_bypass_x86_2(CABACContext *c)
+{
+    FFMPEG_EXTRAKT_METRICS(const uint8_t* cur_byte_count = c->bytestream);
+    FFMPEG_MEASURE_CABAC(uint64_t* cabac = &c->statsctx->cabac_time);
+    FFMPEG_MEASURE_CABAC(FFMPEG_TIME_BEGINN(cabac));
+    int ret = get_cabac_bypass_x86(c);
+    FFMPEG_MEASURE_CABAC(FFMPEG_TIME_END(cabac));
+    FFMPEG_EXTRAKT_METRICS(c->statsctx->cabac_size += (c->bytestream - cur_byte_count));
+    return ret;
 }
 #endif /* !BROKEN_COMPILER */
 

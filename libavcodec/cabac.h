@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 
+#include "libavutil/debug.h"
 #include "put_bits.h"
 
 extern const uint8_t ff_h264_cabac_tables[512 + 4*2*64 + 4*64 + 63];
@@ -48,6 +49,7 @@ typedef struct CABACContext{
     const uint8_t *bytestream;
     const uint8_t *bytestream_end;
     PutBitContext pb;
+    FFMPEG_MEASURE_CABAC(AVStatsContext* statsctx);
 }CABACContext;
 
 void ff_init_cabac_encoder(CABACContext *c, uint8_t *buf, int buf_size);

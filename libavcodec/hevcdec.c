@@ -3202,6 +3202,7 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
     int frame_num;
     // int frame_num = avctx->frame_number + 1; // Does not work as expected, returns "0" 3 times at te beginning
     AVStatsContext* stats = avpriv_reset_stats_ctx(&s->statsctx);
+    s->HEVClc->cc.statsctx = stats;
     uint64_t* frame = &stats->frame_time;
 
     FFMPEG_TIME_BEGINN(frame);
