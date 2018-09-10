@@ -49,7 +49,7 @@ typedef struct CABACContext{
     const uint8_t *bytestream;
     const uint8_t *bytestream_end;
     PutBitContext pb;
-    FFMPEG_MEASURE_CABAC(AVStatsContext* statsctx);
+    AVStatsContext* statsctx;
 }CABACContext;
 
 void ff_init_cabac_encoder(CABACContext *c, uint8_t *buf, int buf_size);
