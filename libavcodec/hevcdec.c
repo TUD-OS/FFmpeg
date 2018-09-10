@@ -2099,7 +2099,7 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
     lc->cu.pred_mode        = MODE_INTRA;
     lc->cu.part_mode        = PART_2Nx2N;
     lc->cu.intra_split_flag = 0;
-    FFMPEG_EXTRAKT_METRICS(s->statsctx.cu_count++);
+    FFMPEG_EXTRACT_METRICS(s->statsctx.cu_count++);
 
     SAMPLE_CTB(s->skip_flag, x_cb, y_cb) = 0;
     for (x = 0; x < 4; x++)
@@ -2147,14 +2147,14 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
         }
 
         if (lc->cu.pred_mode == MODE_INTRA) {
-            FFMPEG_EXTRAKT_METRICS(s->statsctx.intra_cu_count++);
+            FFMPEG_EXTRACT_METRICS(s->statsctx.intra_cu_count++);
             if (lc->cu.part_mode == PART_2Nx2N && s->ps.sps->pcm_enabled_flag &&
                 log2_cb_size >= s->ps.sps->pcm.log2_min_pcm_cb_size &&
                 log2_cb_size <= s->ps.sps->pcm.log2_max_pcm_cb_size) {
                 pcm_flag = ff_hevc_pcm_flag_decode(s);
             }
             if (pcm_flag) {
-                FFMPEG_EXTRAKT_METRICS(s->statsctx.pcm_cu_count++);
+                FFMPEG_EXTRACT_METRICS(s->statsctx.pcm_cu_count++);
                 intra_prediction_unit_default_value(s, x0, y0, log2_cb_size);
                 uint64_t* pcm_cu_time = &s->statsctx.pcm_cu_time;
                 FFMPEG_TIME_BEGINN(pcm_cu_time);
@@ -2169,7 +2169,7 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
                 intra_prediction_unit(s, x0, y0, log2_cb_size);
             }
         } else {
-            FFMPEG_EXTRAKT_METRICS(s->statsctx.inter_cu_count++);
+            FFMPEG_EXTRACT_METRICS(s->statsctx.inter_cu_count++);
             intra_prediction_unit_default_value(s, x0, y0, log2_cb_size);
             switch (lc->cu.part_mode) {
             case PART_2Nx2N:
@@ -2936,7 +2936,7 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
     case HEVC_NAL_RADL_R:
     case HEVC_NAL_RASL_N:
     case HEVC_NAL_RASL_R:
-        FFMPEG_EXTRAKT_METRICS(s->statsctx.slice_size = nal->size);
+        FFMPEG_EXTRACT_METRICS(s->statsctx.slice_size = nal->size);
         ret = hls_slice_header(s);
         if (ret < 0)
             return ret;
@@ -3262,10 +3262,10 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
     FFMPEG_TIME_END(frame);
     frame_number++;
     frame_num = frame_number;
-    FFMPEG_EXTRAKT_METRICS(stats->frame_number = frame_num);
+    FFMPEG_EXTRACT_METRICS(stats->frame_number = frame_num);
     // This only affects the most recent slice of the frame!
-    FFMPEG_EXTRAKT_METRICS(stats->slice_type = s->sh.slice_type);
-    FFMPEG_EXTRAKT_METRICS(stats->pixel_count = avctx->width * avctx->height);
+    FFMPEG_EXTRACT_METRICS(stats->slice_type = s->sh.slice_type);
+    FFMPEG_EXTRACT_METRICS(stats->pixel_count = avctx->width * avctx->height);
 
     avpriv_log_stats_ctx(stats);
 

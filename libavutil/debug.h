@@ -143,7 +143,7 @@ static av_always_inline av_unused int64_t rtdsc_to_ns(int64_t cycles) {
 }
 
 #if EXTRACT_METRICS
-#define FFMPEG_EXTRAKT_METRICS(x) x
+#define FFMPEG_EXTRACT_METRICS(x) x
 #else
 #define FFMPEG_EXTRAKT_METRICS(x)
 #endif // EXTRACT_METRICS
