@@ -2129,8 +2129,25 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
     }
 
     if (SAMPLE_CTB(s->skip_flag, x_cb, y_cb)) {
+// INTER - SKIP Mode
+// HEVC includes a merge mode to derive the motion information from spatially or temporally neighboring blocks.
+    /*
+        In HEVC, the skip mode is treated as a special case of the
+        merge mode when all coded block flags are equal to zero.
+        In this specific case, only a skip flag and the corresponding
+        merge index are transmitted to the decoder. The B-direct mode
+        of H.264/MPEG-4 AVC is also replaced by the merge mode,
+        since the merge mode allows all motion information to be
+        derived from the spatial and temporal motion information of
+        the neighboring blocks with residual coding.
+    */
+        FFMPEG_EXTRACT_METRICS(s->statsctx.skip_cu_count++);
+        u_int64_t* inter_cu_time = &s->statsctx.inter_cu_time;
+
+        FFMPEG_TIME_BEGINN(inter_cu_time);
         hls_prediction_unit(s, x0, y0, cb_size, cb_size, log2_cb_size, 0, idx);
         intra_prediction_unit_default_value(s, x0, y0, log2_cb_size);
+        FFMPEG_TIME_END(inter_cu_time);
 
         if (!s->sh.disable_deblocking_filter_flag)
             ff_hevc_deblocking_boundary_strengths(s, x0, y0, log2_cb_size);
@@ -2145,7 +2162,7 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
             lc->cu.intra_split_flag = lc->cu.part_mode == PART_NxN &&
                                       lc->cu.pred_mode == MODE_INTRA;
         }
-
+// INTRA
         if (lc->cu.pred_mode == MODE_INTRA) {
             FFMPEG_EXTRACT_METRICS(s->statsctx.intra_cu_count++);
             if (lc->cu.part_mode == PART_2Nx2N && s->ps.sps->pcm_enabled_flag &&
@@ -2155,21 +2172,35 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
             }
             if (pcm_flag) {
                 FFMPEG_EXTRACT_METRICS(s->statsctx.pcm_cu_count++);
+                uint64_t* intra_cu_time = &s->statsctx.intra_cu_time;
+
+                FFMPEG_TIME_BEGINN(intra_cu_time);
                 intra_prediction_unit_default_value(s, x0, y0, log2_cb_size);
+                FFMPEG_TIME_END(intra_cu_time);
+
                 uint64_t* pcm_cu_time = &s->statsctx.pcm_cu_time;
                 FFMPEG_TIME_BEGINN(pcm_cu_time);
                 ret = hls_pcm_sample(s, x0, y0, log2_cb_size);
                 FFMPEG_TIME_END(pcm_cu_time);
+
                 if (s->ps.sps->pcm.loop_filter_disable_flag)
                     set_deblocking_bypass(s, x0, y0, log2_cb_size);
 
                 if (ret < 0)
                     return ret;
             } else {
+                uint64_t* intra_cu_time = &s->statsctx.intra_cu_time;
+
+                FFMPEG_TIME_BEGINN(intra_cu_time);
                 intra_prediction_unit(s, x0, y0, log2_cb_size);
+                FFMPEG_TIME_END(intra_cu_time);
             }
         } else {
+// INTER
             FFMPEG_EXTRACT_METRICS(s->statsctx.inter_cu_count++);
+            u_int64_t* inter_cu_time = &s->statsctx.inter_cu_time;
+
+            FFMPEG_TIME_BEGINN(inter_cu_time);
             intra_prediction_unit_default_value(s, x0, y0, log2_cb_size);
             switch (lc->cu.part_mode) {
             case PART_2Nx2N:
@@ -2206,6 +2237,7 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
                 hls_prediction_unit(s, x0 + cb_size / 2, y0 + cb_size / 2, cb_size / 2, cb_size / 2, log2_cb_size, 3, idx - 1);
                 break;
             }
+            FFMPEG_TIME_END(inter_cu_time);
         }
 
         if (!pcm_flag) {
@@ -2220,9 +2252,14 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
                 lc->cu.max_trafo_depth = lc->cu.pred_mode == MODE_INTRA ?
                                          s->ps.sps->max_transform_hierarchy_depth_intra + lc->cu.intra_split_flag :
                                          s->ps.sps->max_transform_hierarchy_depth_inter;
+
+                uint64_t* transform_time = &s->statsctx.transform_time;
+                FFMPEG_TIME_BEGINN(transform_time);
                 ret = hls_transform_tree(s, x0, y0, x0, y0, x0, y0,
                                          log2_cb_size,
                                          log2_cb_size, 0, 0, cbf, cbf);
+                FFMPEG_TIME_END(transform_time);
+
                 if (ret < 0)
                     return ret;
             } else {
@@ -2399,7 +2436,9 @@ static int hls_decode_entry(AVCodecContext *avctxt, void *isFilterThread)
     int ctb_addr_ts = s->ps.pps->ctb_addr_rs_to_ts[s->sh.slice_ctb_addr_rs];
     int ret;
     FFMPEG_MEASURE_CABAC(uint64_t* cabac = &s->statsctx.cabac_time);
-    uint64_t* sao_param = &s->statsctx.sao_param_time;
+    uint64_t* filter_time = &s->statsctx.filter_time;
+    uint64_t* filter_time2 = &s->statsctx.filter_time;
+    uint64_t* filter_time3 = &s->statsctx.filter_time;
 
     if (!ctb_addr_ts && s->sh.dependent_slice_segment_flag) {
         av_log(s->avctx, AV_LOG_ERROR, "Impossible initial tile.\n");
@@ -2429,9 +2468,9 @@ static int hls_decode_entry(AVCodecContext *avctxt, void *isFilterThread)
             return ret;
         }
 
-        FFMPEG_TIME_BEGINN(sao_param);
+        FFMPEG_TIME_BEGINN(filter_time);
         hls_sao_param(s, x_ctb >> s->ps.sps->log2_ctb_size, y_ctb >> s->ps.sps->log2_ctb_size);
-        FFMPEG_TIME_END(sao_param);
+        FFMPEG_TIME_END(filter_time);
 
         s->deblock[ctb_addr_rs].beta_offset = s->sh.beta_offset;
         s->deblock[ctb_addr_rs].tc_offset   = s->sh.tc_offset;
@@ -2446,13 +2485,17 @@ static int hls_decode_entry(AVCodecContext *avctxt, void *isFilterThread)
 
         ctb_addr_ts++;
         ff_hevc_save_states(s, ctb_addr_ts);
+        FFMPEG_TIME_BEGINN(filter_time2);
         ff_hevc_hls_filters(s, x_ctb, y_ctb, ctb_size);
+        FFMPEG_TIME_END(filter_time2);
     }
 
     if (x_ctb + ctb_size >= s->ps.sps->width &&
-        y_ctb + ctb_size >= s->ps.sps->height)
+            y_ctb + ctb_size >= s->ps.sps->height) {
+        FFMPEG_TIME_BEGINN(filter_time3);
         ff_hevc_hls_filter(s, x_ctb, y_ctb, ctb_size);
-
+        FFMPEG_TIME_END(filter_time3);
+    }
     return ctb_addr_ts;
 }
 

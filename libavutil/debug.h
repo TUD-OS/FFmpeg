@@ -49,14 +49,19 @@ typedef struct
     uint32_t cu_count;
     uint32_t intra_cu_count;
     uint32_t inter_cu_count;
+    uint32_t skip_cu_count;
     uint32_t pcm_cu_count;
 
     // Time measurements
-    uint64_t frame_time;
-    uint64_t cabac_time;
-    uint64_t sao_param_time;
-    uint64_t cu_time;
-    uint64_t pcm_cu_time;
+    uint64_t frame_time; // -complete frame time- / hevc_decode_frame
+    uint64_t cu_time; // hls_coding_unit
+    uint64_t cabac_time; // get_cabac_bypass, get_cabac, ff_hevc_cabac_init
+
+    uint64_t intra_cu_time;
+    uint64_t inter_cu_time;
+    uint64_t pcm_cu_time; // -time spent for pcm intra decoding, most likely not used- / hls_pcm_sample
+    uint64_t transform_time; // -residual- / hls_transform_tree
+    uint64_t filter_time; // -deblocking- / ff_hevc_deblocking_boundary_strengths, ff_hevc_hls_filter
 } AVStatsContext;
 
 AVStatsContext* avpriv_reset_stats_ctx(AVStatsContext* ctx);
