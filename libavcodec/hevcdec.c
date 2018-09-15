@@ -2145,8 +2145,10 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
         u_int64_t* inter_cu_time = &s->statsctx.inter_cu_time;
 
         FFMPEG_TIME_BEGINN(inter_cu_time);
+        s->statsctx.cabac_inter_cu_flag = 1;
         hls_prediction_unit(s, x0, y0, cb_size, cb_size, log2_cb_size, 0, idx);
         intra_prediction_unit_default_value(s, x0, y0, log2_cb_size);
+        s->statsctx.cabac_inter_cu_flag = 0;
         FFMPEG_TIME_END(inter_cu_time);
 
         if (!s->sh.disable_deblocking_filter_flag)
@@ -2175,12 +2177,16 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
                 uint64_t* intra_cu_time = &s->statsctx.intra_cu_time;
 
                 FFMPEG_TIME_BEGINN(intra_cu_time);
+                s->statsctx.cabac_intra_cu_flag = 1;
                 intra_prediction_unit_default_value(s, x0, y0, log2_cb_size);
+                s->statsctx.cabac_intra_cu_flag = 0;
                 FFMPEG_TIME_END(intra_cu_time);
 
                 uint64_t* pcm_cu_time = &s->statsctx.pcm_cu_time;
                 FFMPEG_TIME_BEGINN(pcm_cu_time);
+                s->statsctx.cabac_pcm_cu_flag = 1;
                 ret = hls_pcm_sample(s, x0, y0, log2_cb_size);
+                s->statsctx.cabac_pcm_cu_flag = 0;
                 FFMPEG_TIME_END(pcm_cu_time);
 
                 if (s->ps.sps->pcm.loop_filter_disable_flag)
@@ -2192,7 +2198,9 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
                 uint64_t* intra_cu_time = &s->statsctx.intra_cu_time;
 
                 FFMPEG_TIME_BEGINN(intra_cu_time);
+                s->statsctx.cabac_intra_cu_flag = 1;
                 intra_prediction_unit(s, x0, y0, log2_cb_size);
+                s->statsctx.cabac_intra_cu_flag = 0;
                 FFMPEG_TIME_END(intra_cu_time);
             }
         } else {
@@ -2201,6 +2209,7 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
             u_int64_t* inter_cu_time = &s->statsctx.inter_cu_time;
 
             FFMPEG_TIME_BEGINN(inter_cu_time);
+            s->statsctx.cabac_inter_cu_flag = 1;
             intra_prediction_unit_default_value(s, x0, y0, log2_cb_size);
             switch (lc->cu.part_mode) {
             case PART_2Nx2N:
@@ -2237,6 +2246,7 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
                 hls_prediction_unit(s, x0 + cb_size / 2, y0 + cb_size / 2, cb_size / 2, cb_size / 2, log2_cb_size, 3, idx - 1);
                 break;
             }
+            s->statsctx.cabac_inter_cu_flag = 0;
             FFMPEG_TIME_END(inter_cu_time);
         }
 
@@ -2255,10 +2265,12 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
 
                 uint64_t* transform_time = &s->statsctx.transform_time;
                 FFMPEG_TIME_BEGINN(transform_time);
+                s->statsctx.cabac_transform_flag = 1;
                 ret = hls_transform_tree(s, x0, y0, x0, y0, x0, y0,
                                          log2_cb_size,
                                          log2_cb_size, 0, 0, cbf, cbf);
                 FFMPEG_TIME_END(transform_time);
+                s->statsctx.cabac_transform_flag = 0;
 
                 if (ret < 0)
                     return ret;
@@ -2435,7 +2447,6 @@ static int hls_decode_entry(AVCodecContext *avctxt, void *isFilterThread)
     int y_ctb       = 0;
     int ctb_addr_ts = s->ps.pps->ctb_addr_rs_to_ts[s->sh.slice_ctb_addr_rs];
     int ret;
-    FFMPEG_MEASURE_CABAC(uint64_t* cabac = &s->statsctx.cabac_time);
     uint64_t* filter_time = &s->statsctx.filter_time;
     uint64_t* filter_time2 = &s->statsctx.filter_time;
     uint64_t* filter_time3 = &s->statsctx.filter_time;
@@ -2460,16 +2471,16 @@ static int hls_decode_entry(AVCodecContext *avctxt, void *isFilterThread)
         y_ctb = (ctb_addr_rs / ((s->ps.sps->width + ctb_size - 1) >> s->ps.sps->log2_ctb_size)) << s->ps.sps->log2_ctb_size;
         hls_decode_neighbour(s, x_ctb, y_ctb, ctb_addr_ts);
 
-        FFMPEG_MEASURE_CABAC(FFMPEG_TIME_BEGINN(cabac));
         ret = ff_hevc_cabac_init(s, ctb_addr_ts);
-        FFMPEG_MEASURE_CABAC(FFMPEG_TIME_END(cabac));
         if (ret < 0) {
             s->tab_slice_address[ctb_addr_rs] = -1;
             return ret;
         }
 
         FFMPEG_TIME_BEGINN(filter_time);
+        s->statsctx.cabac_filter_flag = 1;
         hls_sao_param(s, x_ctb >> s->ps.sps->log2_ctb_size, y_ctb >> s->ps.sps->log2_ctb_size);
+        s->statsctx.cabac_filter_flag = 0;
         FFMPEG_TIME_END(filter_time);
 
         s->deblock[ctb_addr_rs].beta_offset = s->sh.beta_offset;
@@ -2486,14 +2497,18 @@ static int hls_decode_entry(AVCodecContext *avctxt, void *isFilterThread)
         ctb_addr_ts++;
         ff_hevc_save_states(s, ctb_addr_ts);
         FFMPEG_TIME_BEGINN(filter_time2);
+        s->statsctx.cabac_filter_flag = 1;
         ff_hevc_hls_filters(s, x_ctb, y_ctb, ctb_size);
+        s->statsctx.cabac_filter_flag = 0;
         FFMPEG_TIME_END(filter_time2);
     }
 
     if (x_ctb + ctb_size >= s->ps.sps->width &&
             y_ctb + ctb_size >= s->ps.sps->height) {
         FFMPEG_TIME_BEGINN(filter_time3);
+        s->statsctx.cabac_filter_flag = 1;
         ff_hevc_hls_filter(s, x_ctb, y_ctb, ctb_size);
+        s->statsctx.cabac_filter_flag = 0;
         FFMPEG_TIME_END(filter_time3);
     }
     return ctb_addr_ts;
@@ -2522,8 +2537,6 @@ static int hls_decode_entry_wpp(AVCodecContext *avctxt, void *input_ctb_row, int
     int ctb_addr_ts = s1->ps.pps->ctb_addr_rs_to_ts[ctb_addr_rs];
     int thread = ctb_row % s1->threads_number;
     int ret;
-    FFMPEG_MEASURE_CABAC(uint64_t* cabac = &s1->statsctx.cabac_time);
-    FFMPEG_MEASURE_CABAC(uint64_t* cabac2 = &s1->statsctx.cabac_time);
 
     s = s1->sList[self_id];
     lc = s->HEVClc;
@@ -2532,9 +2545,7 @@ static int hls_decode_entry_wpp(AVCodecContext *avctxt, void *input_ctb_row, int
         ret = init_get_bits8(&lc->gb, s->data + s->sh.offset[ctb_row - 1], s->sh.size[ctb_row - 1]);
         if (ret < 0)
             goto error;
-        FFMPEG_MEASURE_CABAC(FFMPEG_TIME_BEGINN(cabac));
         ff_init_cabac_decoder(&lc->cc, s->data + s->sh.offset[(ctb_row)-1], s->sh.size[ctb_row - 1]);
-        FFMPEG_MEASURE_CABAC(FFMPEG_TIME_END(cabac));
     }
 
     while(more_data && ctb_addr_ts < s->ps.sps->ctb_size) {
@@ -2550,9 +2561,7 @@ static int hls_decode_entry_wpp(AVCodecContext *avctxt, void *input_ctb_row, int
             return 0;
         }
 
-        FFMPEG_MEASURE_CABAC(FFMPEG_TIME_BEGINN(cabac2));
         ret = ff_hevc_cabac_init(s, ctb_addr_ts);
-        FFMPEG_MEASURE_CABAC(FFMPEG_TIME_END(cabac2));
         if (ret < 0)
             goto error;
         hls_sao_param(s, x_ctb >> s->ps.sps->log2_ctb_size, y_ctb >> s->ps.sps->log2_ctb_size);

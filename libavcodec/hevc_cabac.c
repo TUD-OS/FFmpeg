@@ -23,6 +23,7 @@
 
 #include "libavutil/attributes.h"
 #include "libavutil/common.h"
+#include "libavutil/debug.h"
 
 #include "cabac_functions.h"
 #include "hevc_data.h"
@@ -503,10 +504,15 @@ static void cabac_init_state(HEVCContext *s)
 
 int ff_hevc_cabac_init(HEVCContext *s, int ctb_addr_ts)
 {
+    FFMPEG_MEASURE_CABAC(uint64_t* cabac = &s->statsctx.cabac_time);
+    FFMPEG_CABAC_TIME_BEGIN(cabac, &s->statsctx);
+    AVStatsContext* stats = &(s->statsctx);
     if (ctb_addr_ts == s->ps.pps->ctb_addr_rs_to_ts[s->sh.slice_ctb_addr_rs]) {
         int ret = cabac_init_decoder(s);
-        if (ret < 0)
+        if (ret < 0) {
+            FFMPEG_CABAC_TIME_END(cabac, stats);
             return ret;
+        }
         if (s->sh.dependent_slice_segment_flag == 0 ||
             (s->ps.pps->tiles_enabled_flag &&
              s->ps.pps->tile_id[ctb_addr_ts] != s->ps.pps->tile_id[ctb_addr_ts - 1]))
@@ -530,8 +536,10 @@ int ff_hevc_cabac_init(HEVCContext *s, int ctb_addr_ts)
             else {
                 ret = cabac_init_decoder(s);
             }
-            if (ret < 0)
+            if (ret < 0) {
+                FFMPEG_CABAC_TIME_END(cabac, stats);
                 return ret;
+            }
             cabac_init_state(s);
         }
         if (s->ps.pps->entropy_coding_sync_enabled_flag) {
@@ -543,8 +551,10 @@ int ff_hevc_cabac_init(HEVCContext *s, int ctb_addr_ts)
                 else {
                     ret = cabac_init_decoder(s);
                 }
-                if (ret < 0)
+                if (ret < 0) {
+                    FFMPEG_CABAC_TIME_END(cabac, stats);
                     return ret;
+                }
 
                 if (s->ps.sps->ctb_width == 1)
                     cabac_init_state(s);
@@ -553,12 +563,13 @@ int ff_hevc_cabac_init(HEVCContext *s, int ctb_addr_ts)
             }
         }
     }
+    FFMPEG_CABAC_TIME_END(cabac, stats);
     return 0;
 }
 
 
 #if MEASURE_CABAC
-#define GET_CABAC(ctx) get_cabac2(&s->HEVClc->cc, &s->HEVClc->cabac_state[ctx], &s->statsctx)
+#define GET_CABAC(ctx) get_cabac2(&s->HEVClc->cc, &s->HEVClc->cabac_state[ctx])
 #else
 #define GET_CABAC(ctx) get_cabac(&s->HEVClc->cc, &s->HEVClc->cabac_state[ctx])
 #endif

@@ -55,13 +55,26 @@ typedef struct
     // Time measurements
     uint64_t frame_time; // -complete frame time- / hevc_decode_frame
     uint64_t cu_time; // hls_coding_unit
-    uint64_t cabac_time; // get_cabac_bypass, get_cabac, ff_hevc_cabac_init
+    uint64_t cabac_time; // get_cabac_bypass, GET_CABAC, ff_hevc_cabac_init
 
     uint64_t intra_cu_time;
     uint64_t inter_cu_time;
     uint64_t pcm_cu_time; // -time spent for pcm intra decoding, most likely not used- / hls_pcm_sample
     uint64_t transform_time; // -residual- / hls_transform_tree
     uint64_t filter_time; // -deblocking- / ff_hevc_deblocking_boundary_strengths, ff_hevc_hls_filter
+
+    // Cabac exclusion
+    uint64_t cabac_intra_cu_time;
+    uint64_t cabac_inter_cu_time;
+    uint64_t cabac_pcm_cu_time;
+    uint64_t cabac_transform_time;
+    uint64_t cabac_filter_time;
+
+    int cabac_intra_cu_flag;
+    int cabac_inter_cu_flag;
+    int cabac_pcm_cu_flag;
+    int cabac_transform_flag;
+    int cabac_filter_flag;
 } AVStatsContext;
 
 AVStatsContext* avpriv_reset_stats_ctx(AVStatsContext* ctx);
@@ -175,7 +188,31 @@ static av_always_inline av_unused int64_t rtdsc_to_ns(int64_t cycles) {
 
 #if MEASURE_CABAC
 #define FFMPEG_MEASURE_CABAC(x) x
+
+#define FFMPEG_CABAC_TIME_BEGIN(measurement, statsctx) \
+    uint64_t start_time_##measurement = AV_READ_TIME();
+
+#define FFMPEG_CABAC_TIME_END(measurement, stats) \
+    do { \
+        uint64_t diff_##measurement = AV_READ_TIME() - start_time_##measurement; \
+        stats->cabac_time += diff_##measurement; \
+        if (stats->cabac_intra_cu_flag) { \
+            stats->cabac_intra_cu_time += diff_##measurement; \
+        } else if (stats->cabac_inter_cu_flag) { \
+            stats->cabac_inter_cu_time += diff_##measurement; \
+        } else if (stats->cabac_pcm_cu_flag) { \
+           stats->cabac_pcm_cu_time += diff_##measurement; \
+        } else if (stats->cabac_transform_flag) { \
+            stats->cabac_transform_time += diff_##measurement; \
+        } else if (stats->cabac_filter_flag) { \
+            stats->cabac_filter_time += diff_##measurement; \
+        } \
+    } while (0)
+
 #else
 #define FFMPEG_MEASURE_CABAC(x)
+#define FFMPEG_CABAC_TIME_BEGINN(measurement, stats)
+#define FFMPEG_CABAC_TIME_END(measurement, stats)
 #endif // MEASURE_CABAC
+
 #endif // AVUTIL_DEBUG_H

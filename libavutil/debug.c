@@ -20,6 +20,13 @@ void avpriv_log_stats_ctx(AVStatsContext* ctx)
     /* TODO: Improve*/
 #define LOG_LINE_LENGTH 256
     char line[LOG_LINE_LENGTH];
+
+    ctx->intra_cu_time -= ctx->cabac_intra_cu_time;
+    ctx->inter_cu_time -= ctx->cabac_inter_cu_time;
+    ctx->pcm_cu_time -= ctx->cabac_pcm_cu_time;
+    ctx->transform_time -= ctx->cabac_transform_time;
+    ctx->filter_time -= ctx->cabac_filter_time;
+
 #ifdef USE_RDTSC
     ctx->frame_time = rtdsc_to_ns(ctx->frame_time);
     ctx->cu_time = rtdsc_to_ns(ctx->cu_time);

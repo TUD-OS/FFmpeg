@@ -139,18 +139,18 @@ static int av_unused get_cabac(CABACContext *c, uint8_t * const state){
 }
 
 
-static int av_unused get_cabac2(CABACContext *c, uint8_t * const state, AVStatsContext* stats)
+static int av_unused get_cabac2(CABACContext *c, uint8_t * const state)
 {
     int result;
 
-    uint64_t* cabac = &stats->cabac_time;
+    uint64_t* cabac = &c->statsctx->cabac_time;
     FFMPEG_EXTRACT_METRICS(const uint8_t* cur_byte_count = c->bytestream);
-    FFMPEG_TIME_BEGINN(cabac);
+    FFMPEG_CABAC_TIME_BEGIN(cabac, c->statsctx);
 
     result = get_cabac_inline(c,state);
 
-    FFMPEG_TIME_END(cabac);
-    FFMPEG_EXTRACT_METRICS(stats->cabac_size += (c->bytestream - cur_byte_count));
+    FFMPEG_CABAC_TIME_END(cabac, c->statsctx);
+    FFMPEG_EXTRACT_METRICS(c->statsctx->cabac_size += (c->bytestream - cur_byte_count));
 
     return result;
 }

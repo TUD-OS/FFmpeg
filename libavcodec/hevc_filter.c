@@ -726,6 +726,7 @@ void ff_hevc_deblocking_boundary_strengths(HEVCContext *s, int x0, int y0,
     int i, j, bs;
     uint64_t* filter_time = &s->statsctx.filter_time;
     FFMPEG_TIME_BEGINN(filter_time);
+    s->statsctx.cabac_filter_flag = 1;
 
     boundary_upper = y0 > 0 && !(y0 & 7);
     if (boundary_upper &&
@@ -835,6 +836,7 @@ void ff_hevc_deblocking_boundary_strengths(HEVCContext *s, int x0, int y0,
             }
         }
     }
+    s->statsctx.cabac_filter_flag = 0;
     FFMPEG_TIME_END(filter_time);
 }
 
