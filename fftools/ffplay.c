@@ -3248,6 +3248,10 @@ static void event_loop(VideoState *cur_stream)
     SDL_Event event;
     double incr, pos, frac;
 
+    uint64_t event_loop_time_v;
+    uint64_t* event_loop_time = &event_loop_time_v;
+    FFMPEG_TIME_BEGINN(event_loop_time);
+
     for (;;) {
         double x;
         refresh_loop_wait_event(cur_stream, &event);
@@ -3260,6 +3264,8 @@ static void event_loop(VideoState *cur_stream)
             switch (event.key.keysym.sym) {
             case SDLK_ESCAPE:
             case SDLK_q:
+		    FFMPEG_TIME_END(event_loop_time);
+		    av_log(NULL, AV_LOG_WARNING, "Main event loop time: %f s\n", (double)(event_loop_time_v) / (1000000000.0 * CPU_BASE_FREQ));
                 do_exit(cur_stream);
                 break;
             case SDLK_f:
@@ -3435,6 +3441,8 @@ static void event_loop(VideoState *cur_stream)
             break;
         case SDL_QUIT:
         case FF_QUIT_EVENT:
+		FFMPEG_TIME_END(event_loop_time);
+		av_log(NULL, AV_LOG_WARNING, "Main event loop time: %f s\n",  (double)(event_loop_time_v) / (1000000000.0 * CPU_BASE_FREQ));
             do_exit(cur_stream);
             break;
         default:
@@ -3733,8 +3741,8 @@ int main(int argc, char **argv)
         av_log(NULL, AV_LOG_FATAL, "Failed to initialize VideoState!\n");
         do_exit(NULL);
     }
-
     avpriv_init_log(input_filename);
+
     event_loop(is);
     avpriv_finalize_log();
 
