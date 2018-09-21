@@ -37,6 +37,7 @@
 /src
 /mapfile
 
+/hevc_decode
 /callgrind*
 /vgcore.*
 /ffmpeg.config
