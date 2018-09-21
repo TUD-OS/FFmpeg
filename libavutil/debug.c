@@ -51,9 +51,9 @@ void avpriv_log_stats_ctx(AVStatsContext* ctx)
 #endif
     snprintf(line, LOG_LINE_LENGTH
              , "%" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64
-             ", %d, %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32
+             ", %d, %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32
              , ctx->frame_number, ctx->frame_time, ctx->cu_time, ctx->cabac_time, ctx->intra_cu_time, ctx->inter_cu_time, ctx->pcm_cu_time, ctx->transform_time, ctx->filter_time
-             , ctx->slice_type, ctx->slice_size, ctx->cabac_size, ctx->pixel_count, ctx->cu_count, ctx->inter_cu_count, ctx->intra_cu_count, ctx->skip_cu_count, ctx->pcm_cu_count
+             , ctx->slice_type, ctx->slice_size, ctx->cabac_size, ctx->cu_count, ctx->inter_cu_count, ctx->intra_cu_count, ctx->skip_cu_count, ctx->pcm_cu_count, ctx->pixel_count, ctx->bit_depth, ctx->ctb_size, ctx->tu_count, ctx->inter_pu_count, ctx->intra_pu_count
              );
     avpriv_log(line);
 }
@@ -80,7 +80,7 @@ void avpriv_init_log(const char* input_file)
         exit(EXIT_FAILURE);
     }
     avpriv_log("frame_num, frame_time, cu_time, cabac_time, intra_cu_time, inter_cu_time, pcm_cu_time, transform_time, filter_time"
-               ", slice_type, slice_size, cabac_size, pixel_count, cu_count, inter_cu_count, intra_cu_count, skip_cu_count, pcm_cu_count"
+               ", slice_type, slice_size, cabac_size, cu_count, inter_cu_count, intra_cu_count, skip_cu_count, pcm_cu_count, pixel_count, bit_depth, ctb_size, tu_count, inter_pu_count, intra_pu_count"
                );
 }
 

@@ -51,6 +51,11 @@ typedef struct
     uint32_t inter_cu_count;
     uint32_t skip_cu_count;
     uint32_t pcm_cu_count;
+    uint32_t bit_depth;
+    uint32_t ctb_size; // Same for ALL CTUs 64/32/16
+    uint32_t tu_count;
+    uint32_t inter_pu_count;
+    uint32_t intra_pu_count;
 
     // Time measurements
     uint64_t frame_time; // -complete frame time- / hevc_decode_frame

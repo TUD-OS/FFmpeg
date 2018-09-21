@@ -1316,6 +1316,7 @@ do {                                                                            
         int log2_min_tu_size = s->ps.sps->log2_min_tb_size;
         int min_tu_width     = s->ps.sps->min_tb_width;
         int cbf_luma         = 1;
+        s->statsctx.tu_count++;
 
         if (lc->cu.pred_mode == MODE_INTRA || trafo_depth != 0 ||
             cbf_cb[0] || cbf_cr[0] ||
@@ -1792,6 +1793,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0,
     int y_cb             = y0 >> log2_min_cb_size;
     int x_pu, y_pu;
     int i, j;
+    FFMPEG_EXTRACT_METRICS(s->statsctx.inter_pu_count++);
 
     int skip_flag = SAMPLE_CTB(s->skip_flag, x_cb, y_cb);
 
@@ -2001,6 +2003,7 @@ static void intra_prediction_unit(HEVCContext *s, int x0, int y0,
     int side    = split + 1;
     int chroma_mode;
     int i, j;
+    FFMPEG_EXTRACT_METRICS(s->statsctx.intra_pu_count++);
 
     for (i = 0; i < side; i++)
         for (j = 0; j < side; j++)
@@ -2142,7 +2145,7 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
         the neighboring blocks with residual coding.
     */
         FFMPEG_EXTRACT_METRICS(s->statsctx.skip_cu_count++);
-        u_int64_t* inter_cu_time = &s->statsctx.inter_cu_time;
+        uint64_t* inter_cu_time = &s->statsctx.inter_cu_time;
 
         FFMPEG_TIME_BEGINN(inter_cu_time);
         s->statsctx.cabac_inter_cu_flag = 1;
@@ -2206,7 +2209,7 @@ static int hls_coding_unit(HEVCContext *s, int x0, int y0, int log2_cb_size)
         } else {
 // INTER
             FFMPEG_EXTRACT_METRICS(s->statsctx.inter_cu_count++);
-            u_int64_t* inter_cu_time = &s->statsctx.inter_cu_time;
+            uint64_t* inter_cu_time = &s->statsctx.inter_cu_time;
 
             FFMPEG_TIME_BEGINN(inter_cu_time);
             s->statsctx.cabac_inter_cu_flag = 1;
@@ -3250,7 +3253,6 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
     uint8_t *new_extradata;
     HEVCContext *s = avctx->priv_data;
 
-    char msg[32];
     int frame_num;
     // int frame_num = avctx->frame_number + 1; // Does not work as expected, returns "0" 3 times at te beginning
     AVStatsContext* stats = avpriv_reset_stats_ctx(&s->statsctx);
@@ -3318,11 +3320,12 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
     // This only affects the most recent slice of the frame!
     FFMPEG_EXTRACT_METRICS(stats->slice_type = s->sh.slice_type);
     FFMPEG_EXTRACT_METRICS(stats->pixel_count = avctx->width * avctx->height);
+    FFMPEG_EXTRACT_METRICS(stats->bit_depth = s->ps.sps->bit_depth);
+    FFMPEG_EXTRACT_METRICS(stats->ctb_size = s->ps.sps->log2_ctb_size);
 
     avpriv_log_stats_ctx(stats);
 
-    snprintf(msg, 32, "%d ", frame_num);
-    avpriv_log_info(msg);
+    fprintf(stderr, "\r Decoded frame %u", frame_num);
 
     return avpkt->size;
 }
