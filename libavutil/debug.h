@@ -13,11 +13,12 @@
 /* Whether to extract metrics at all*/
 #define EXTRACT_METRICS 1
 
-/* Weather to measure computing times at all */
+/* Wether to measure computing times at all */
 #define MEASURE_TIME 1
 
 /* Use RDTSC for time measurements, much faster than the default
- * implementation based on clock_gettime */
+ * implementation based on clock_gettime
+ * Must currently not be disabled! */
 #define USE_RDTSC 1
 
 /* Base frequency of the local CPU, only used on RDTSC time measureing */
@@ -62,6 +63,7 @@ typedef struct
     uint32_t sao_edge_count;
 
     // Time measurements
+    // BEFORE you add new time measurements, ensure you will add them to the post processing functions in avpriv_log_stats_ctx()!
     uint64_t frame_time; // -complete frame time- / hevc_decode_frame
     uint64_t cu_time; // hls_coding_unit
     uint64_t cabac_time; // get_cabac_bypass, GET_CABAC, ff_hevc_cabac_init
