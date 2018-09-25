@@ -2382,10 +2382,7 @@ static int hls_coding_quadtree(HEVCContext *s, int x0, int y0,
         else
             return 0;
     } else {
-        uint64_t* cu_time = &s->statsctx.cu_time;
-        FFMPEG_TIME_BEGINN(cu_time);
         ret = hls_coding_unit(s, x0, y0, log2_cb_size);
-        FFMPEG_TIME_END(cu_time);
 
         if (ret < 0)
             return ret;
@@ -2525,7 +2522,11 @@ static int hls_slice_data(HEVCContext *s)
     arg[0] = 0;
     arg[1] = 1;
 
+    uint64_t* slice_time = &s->statsctx.slice_time;
+    FFMPEG_TIME_BEGINN(slice_time);
     s->avctx->execute(s->avctx, hls_decode_entry, arg, ret , 1, sizeof(int));
+    FFMPEG_TIME_END(slice_time);
+
     return ret[0];
 }
 static int hls_decode_entry_wpp(AVCodecContext *avctxt, void *input_ctb_row, int job, int self_id)

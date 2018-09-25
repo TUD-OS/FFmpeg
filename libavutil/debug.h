@@ -65,7 +65,7 @@ typedef struct
     // Time measurements
     // BEFORE you add new time measurements, ensure you will add them to the post processing functions in avpriv_log_stats_ctx()!
     uint64_t frame_time; // -complete frame time- / hevc_decode_frame
-    uint64_t cu_time; // hls_coding_unit
+    uint64_t slice_time; // hls_decode_entry
     uint64_t cabac_time; // get_cabac_bypass, GET_CABAC, ff_hevc_cabac_init
 
     uint64_t intra_cu_time;
