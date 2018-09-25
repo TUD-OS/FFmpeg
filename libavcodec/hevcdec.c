@@ -916,6 +916,10 @@ do {                                                    \
 
 static void hls_sao_param(HEVCContext *s, int rx, int ry)
 {
+    uint64_t* sao_time = &s->statsctx.sao_time;
+    FFMPEG_TIME_BEGINN(sao_time);
+    s->statsctx.cabac_sao_flag = 1;
+
     HEVCLocalContext *lc    = s->HEVClc;
     int sao_merge_left_flag = 0;
     int sao_merge_up_flag   = 0;
@@ -983,6 +987,8 @@ static void hls_sao_param(HEVCContext *s, int rx, int ry)
             sao->offset_val[c_idx][i + 1] *= 1 << log2_sao_offset_scale;
         }
     }
+    s->statsctx.cabac_sao_flag = 0;
+    FFMPEG_TIME_END(sao_time);
 }
 
 #undef SET_SAO
@@ -1340,7 +1346,10 @@ do {                                                                            
                 }
         }
         if (!s->sh.disable_deblocking_filter_flag) {
+            uint64_t* tmp = &s->statsctx.transform_included_time;
+            FFMPEG_TIME_BEGINN(tmp);
             ff_hevc_deblocking_boundary_strengths(s, x0, y0, log2_trafo_size);
+            FFMPEG_TIME_END(tmp);
             if (s->ps.pps->transquant_bypass_enable_flag &&
                 lc->cu.cu_transquant_bypass_flag)
                 set_deblocking_bypass(s, x0, y0, log2_trafo_size);
@@ -1368,8 +1377,12 @@ static int hls_pcm_sample(HEVCContext *s, int x0, int y0, int log2_cb_size)
     const uint8_t *pcm = skip_bytes(&lc->cc, (length + 7) >> 3);
     int ret;
 
-    if (!s->sh.disable_deblocking_filter_flag)
+    if (!s->sh.disable_deblocking_filter_flag) {
+        uint64_t* tmp = &s->statsctx.pcm_included_time;
+        FFMPEG_TIME_BEGINN(tmp);
         ff_hevc_deblocking_boundary_strengths(s, x0, y0, log2_cb_size);
+        FFMPEG_TIME_END(tmp);
+    }
 
     ret = init_get_bits(&gb, pcm, length);
     if (ret < 0)
@@ -2450,9 +2463,6 @@ static int hls_decode_entry(AVCodecContext *avctxt, void *isFilterThread)
     int y_ctb       = 0;
     int ctb_addr_ts = s->ps.pps->ctb_addr_rs_to_ts[s->sh.slice_ctb_addr_rs];
     int ret;
-    uint64_t* filter_time = &s->statsctx.filter_time;
-    uint64_t* filter_time2 = &s->statsctx.filter_time;
-    uint64_t* filter_time3 = &s->statsctx.filter_time;
 
     if (!ctb_addr_ts && s->sh.dependent_slice_segment_flag) {
         av_log(s->avctx, AV_LOG_ERROR, "Impossible initial tile.\n");
@@ -2480,11 +2490,8 @@ static int hls_decode_entry(AVCodecContext *avctxt, void *isFilterThread)
             return ret;
         }
 
-        FFMPEG_TIME_BEGINN(filter_time);
-        s->statsctx.cabac_filter_flag = 1;
         hls_sao_param(s, x_ctb >> s->ps.sps->log2_ctb_size, y_ctb >> s->ps.sps->log2_ctb_size);
-        s->statsctx.cabac_filter_flag = 0;
-        FFMPEG_TIME_END(filter_time);
+
 
         s->deblock[ctb_addr_rs].beta_offset = s->sh.beta_offset;
         s->deblock[ctb_addr_rs].tc_offset   = s->sh.tc_offset;
@@ -2499,20 +2506,13 @@ static int hls_decode_entry(AVCodecContext *avctxt, void *isFilterThread)
 
         ctb_addr_ts++;
         ff_hevc_save_states(s, ctb_addr_ts);
-        FFMPEG_TIME_BEGINN(filter_time2);
-        s->statsctx.cabac_filter_flag = 1;
         ff_hevc_hls_filters(s, x_ctb, y_ctb, ctb_size);
-        s->statsctx.cabac_filter_flag = 0;
-        FFMPEG_TIME_END(filter_time2);
+
     }
 
     if (x_ctb + ctb_size >= s->ps.sps->width &&
             y_ctb + ctb_size >= s->ps.sps->height) {
-        FFMPEG_TIME_BEGINN(filter_time3);
-        s->statsctx.cabac_filter_flag = 1;
         ff_hevc_hls_filter(s, x_ctb, y_ctb, ctb_size);
-        s->statsctx.cabac_filter_flag = 0;
-        FFMPEG_TIME_END(filter_time3);
     }
     return ctb_addr_ts;
 }

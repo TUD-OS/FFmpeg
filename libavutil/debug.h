@@ -56,6 +56,10 @@ typedef struct
     uint32_t tu_count;
     uint32_t inter_pu_count;
     uint32_t intra_pu_count;
+    uint32_t deblock_luma_edge_count;
+    uint32_t deblock_chroma_edge_count;
+    uint32_t sao_band_count;
+    uint32_t sao_edge_count;
 
     // Time measurements
     uint64_t frame_time; // -complete frame time- / hevc_decode_frame
@@ -66,20 +70,28 @@ typedef struct
     uint64_t inter_cu_time;
     uint64_t pcm_cu_time; // -time spent for pcm intra decoding, most likely not used- / hls_pcm_sample
     uint64_t transform_time; // -residual- / hls_transform_tree
-    uint64_t filter_time; // -deblocking- / ff_hevc_deblocking_boundary_strengths, ff_hevc_hls_filter
+    uint64_t deblock_time; // ff_hevc_deblocking_boundary_strengths, deblocking_filter_CTB
+    uint64_t sao_time; // hls_sao_param, sao_filter_CTB
+    // sao_time and deblocking_filter_CTB NOT included in CU time!
 
     // Cabac exclusion
     uint64_t cabac_intra_cu_time;
     uint64_t cabac_inter_cu_time;
     uint64_t cabac_pcm_cu_time;
     uint64_t cabac_transform_time;
-    uint64_t cabac_filter_time;
+    uint64_t cabac_deblock_time;
+    uint64_t cabac_sao_time;
 
     int cabac_intra_cu_flag;
     int cabac_inter_cu_flag;
     int cabac_pcm_cu_flag;
     int cabac_transform_flag;
-    int cabac_filter_flag;
+    int cabac_deblock_flag;
+    int cabac_sao_flag;
+
+    // Other exclusions
+    uint64_t transform_included_time;
+    uint64_t pcm_included_time;
 } AVStatsContext;
 
 AVStatsContext* avpriv_reset_stats_ctx(AVStatsContext* ctx);
@@ -209,8 +221,10 @@ static av_always_inline av_unused int64_t rtdsc_to_ns(int64_t cycles) {
            stats->cabac_pcm_cu_time += diff_##measurement; \
         } else if (stats->cabac_transform_flag) { \
             stats->cabac_transform_time += diff_##measurement; \
-        } else if (stats->cabac_filter_flag) { \
-            stats->cabac_filter_time += diff_##measurement; \
+        } else if (stats->cabac_deblock_flag) { \
+            stats->cabac_deblock_time += diff_##measurement; \
+        } else if (stats->cabac_sao_flag) { \
+            stats->cabac_sao_time += diff_##measurement; \
         } \
     } while (0)
 

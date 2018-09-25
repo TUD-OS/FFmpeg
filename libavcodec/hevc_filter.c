@@ -23,6 +23,7 @@
  */
 
 #include "libavutil/common.h"
+#include "libavutil/debug.h"
 #include "libavutil/internal.h"
 
 #include "cabac_functions.h"
@@ -245,6 +246,10 @@ static void restore_tqb_pixels(HEVCContext *s,
 
 static void sao_filter_CTB(HEVCContext *s, int x, int y)
 {
+    uint64_t* sao_time = &s->statsctx.sao_time;
+    FFMPEG_TIME_BEGINN(sao_time);
+    s->statsctx.cabac_sao_flag = 1;
+
     static const uint8_t sao_tab[8] = { 0, 1, 2, 2, 3, 3, 4, 4 };
     HEVCLocalContext *lc = s->HEVClc;
     int c_idx;
@@ -318,6 +323,7 @@ static void sao_filter_CTB(HEVCContext *s, int x, int y)
 
         switch (sao->type_idx[c_idx]) {
         case SAO_BAND:
+            FFMPEG_EXTRACT_METRICS(s->statsctx.sao_band_count++);
             copy_CTB_to_hv(s, src, stride_src, x0, y0, width, height, c_idx,
                            x_ctb, y_ctb);
             if (s->ps.pps->transquant_bypass_enable_flag ||
@@ -339,6 +345,7 @@ static void sao_filter_CTB(HEVCContext *s, int x, int y)
             break;
         case SAO_EDGE:
         {
+            FFMPEG_EXTRACT_METRICS(s->statsctx.sao_edge_count++);
             int w = s->ps.sps->width >> s->ps.sps->hshift[c_idx];
             int h = s->ps.sps->height >> s->ps.sps->vshift[c_idx];
             int left_edge = edges[0];
@@ -450,6 +457,8 @@ static void sao_filter_CTB(HEVCContext *s, int x, int y)
         }
         }
     }
+    s->statsctx.cabac_sao_flag = 0;
+    FFMPEG_TIME_END(sao_time);
 }
 
 static int get_pcm(HEVCContext *s, int x, int y)
@@ -475,6 +484,10 @@ static int get_pcm(HEVCContext *s, int x, int y)
 
 static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
 {
+    uint64_t* deblocking_time = &s->statsctx.deblock_time;
+    FFMPEG_TIME_BEGINN(deblocking_time);
+    s->statsctx.cabac_deblock_flag = 1;
+
     uint8_t *src;
     int x, y;
     int chroma, beta;
@@ -522,6 +535,7 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
             const int bs0 = s->vertical_bs[(x +  y      * s->bs_width) >> 2];
             const int bs1 = s->vertical_bs[(x + (y + 4) * s->bs_width) >> 2];
             if (bs0 || bs1) {
+                FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_luma_edge_count++);
                 const int qp = (get_qPy(s, x - 1, y)     + get_qPy(s, x, y)     + 1) >> 1;
 
                 beta = betatable[av_clip(qp + beta_offset, 0, MAX_QP)];
@@ -552,6 +566,7 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
             const int bs0 = s->horizontal_bs[( x      + y * s->bs_width) >> 2];
             const int bs1 = s->horizontal_bs[((x + 4) + y * s->bs_width) >> 2];
             if (bs0 || bs1) {
+                FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_luma_edge_count++);
                 const int qp = (get_qPy(s, x, y - 1)     + get_qPy(s, x, y)     + 1) >> 1;
 
                 tc_offset   = x >= x0 ? cur_tc_offset : left_tc_offset;
@@ -589,6 +604,7 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
                     const int bs1 = s->vertical_bs[(x + (y + (4 * v)) * s->bs_width) >> 2];
 
                     if ((bs0 == 2) || (bs1 == 2)) {
+                        FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_chroma_edge_count++);
                         const int qp0 = (get_qPy(s, x - 1, y)           + get_qPy(s, x, y)           + 1) >> 1;
                         const int qp1 = (get_qPy(s, x - 1, y + (4 * v)) + get_qPy(s, x, y + (4 * v)) + 1) >> 1;
 
@@ -622,6 +638,7 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
                     const int bs0 = s->horizontal_bs[( x          + y * s->bs_width) >> 2];
                     const int bs1 = s->horizontal_bs[((x + 4 * h) + y * s->bs_width) >> 2];
                     if ((bs0 == 2) || (bs1 == 2)) {
+                        FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_chroma_edge_count++);
                         const int qp0 = bs0 == 2 ? (get_qPy(s, x,           y - 1) + get_qPy(s, x,           y) + 1) >> 1 : 0;
                         const int qp1 = bs1 == 2 ? (get_qPy(s, x + (4 * h), y - 1) + get_qPy(s, x + (4 * h), y) + 1) >> 1 : 0;
 
@@ -645,6 +662,8 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
             }
         }
     }
+    s->statsctx.cabac_deblock_flag = 0;
+    FFMPEG_TIME_END(deblocking_time);
 }
 
 static int boundary_strength(HEVCContext *s, MvField *curr, MvField *neigh,
@@ -714,6 +733,10 @@ static int boundary_strength(HEVCContext *s, MvField *curr, MvField *neigh,
 void ff_hevc_deblocking_boundary_strengths(HEVCContext *s, int x0, int y0,
                                            int log2_trafo_size)
 {
+    uint64_t* deblocking_time = &s->statsctx.deblock_time;
+    FFMPEG_TIME_BEGINN(deblocking_time);
+    s->statsctx.cabac_deblock_flag = 1;
+
     HEVCLocalContext *lc = s->HEVClc;
     MvField *tab_mvf     = s->ref->tab_mvf;
     int log2_min_pu_size = s->ps.sps->log2_min_pu_size;
@@ -724,9 +747,6 @@ void ff_hevc_deblocking_boundary_strengths(HEVCContext *s, int x0, int y0,
                            (x0 >> log2_min_pu_size)].pred_flag == PF_INTRA;
     int boundary_upper, boundary_left;
     int i, j, bs;
-    uint64_t* filter_time = &s->statsctx.filter_time;
-    FFMPEG_TIME_BEGINN(filter_time);
-    s->statsctx.cabac_filter_flag = 1;
 
     boundary_upper = y0 > 0 && !(y0 & 7);
     if (boundary_upper &&
@@ -836,8 +856,8 @@ void ff_hevc_deblocking_boundary_strengths(HEVCContext *s, int x0, int y0,
             }
         }
     }
-    s->statsctx.cabac_filter_flag = 0;
-    FFMPEG_TIME_END(filter_time);
+    s->statsctx.cabac_deblock_flag = 0;
+    FFMPEG_TIME_END(deblocking_time);
 }
 
 #undef LUMA
