@@ -158,33 +158,33 @@ static av_always_inline av_unused void avpriv_calc_timespan_now(struct timespec*
 }
 
 
-static av_always_inline av_unused int64_t avpriv_calc_timespan_ns(struct timespec *start_time, struct timespec *end_time)
+static av_always_inline av_unused uint64_t avpriv_calc_timespan_ns(struct timespec *start_time, struct timespec *end_time)
 {
     struct timespec result;
     avpriv_calc_timespan(&result, start_time, end_time);
     return result.tv_sec * 1000000000 + result.tv_nsec;
 }
 
-static av_always_inline av_unused int64_t avpriv_calc_timespan_now_ns(struct timespec *start_time)
+static av_always_inline av_unused uint64_t avpriv_calc_timespan_now_ns(struct timespec *start_time)
 {
     struct timespec result;
     avpriv_calc_timespan_now(&result, start_time);
     return result.tv_sec * 1000000000 + result.tv_nsec;
 }
 
-static av_always_inline av_unused int64_t ns_to_ms(int64_t ns)
+static av_always_inline av_unused uint64_t ns_to_ms(uint64_t ns)
 {
     return (double)(ns)/1000000.0;
 }
 
-static av_always_inline av_unused int64_t rtdsc_to_ns(int64_t cycles) {
+static av_always_inline av_unused uint64_t rtdsc_to_ns(uint64_t cycles) {
     return (double)(cycles) / CPU_BASE_FREQ;
 }
 
 #if EXTRACT_METRICS
 #define FFMPEG_EXTRACT_METRICS(x) x
 #else
-#define FFMPEG_EXTRAKT_METRICS(x)
+#define FFMPEG_EXTRACT_METRICS(x)
 #endif // EXTRACT_METRICS
 
 #if MEASURE_TIME
@@ -234,7 +234,7 @@ static av_always_inline av_unused int64_t rtdsc_to_ns(int64_t cycles) {
 
 #else
 #define FFMPEG_MEASURE_CABAC(x)
-#define FFMPEG_CABAC_TIME_BEGINN(measurement, stats)
+#define FFMPEG_CABAC_TIME_BEGIN(measurement, stats)
 #define FFMPEG_CABAC_TIME_END(measurement, stats)
 #endif // MEASURE_CABAC
 
