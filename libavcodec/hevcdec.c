@@ -2922,6 +2922,8 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
     s->nal_unit_type = nal->type;
     s->temporal_id   = nal->temporal_id;
 
+    FFMPEG_EXTRACT_METRICS(s->statsctx.slice_size += nal->size);
+
     switch (s->nal_unit_type) {
     case HEVC_NAL_VPS:
         if (s->avctx->hwaccel && s->avctx->hwaccel->decode_params) {
@@ -2993,7 +2995,7 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
     case HEVC_NAL_RADL_R:
     case HEVC_NAL_RASL_N:
     case HEVC_NAL_RASL_R:
-        FFMPEG_EXTRACT_METRICS(s->statsctx.slice_size = nal->size);
+
         ret = hls_slice_header(s);
         if (ret < 0)
             return ret;
