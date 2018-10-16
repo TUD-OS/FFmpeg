@@ -2522,10 +2522,11 @@ static int hls_slice_data(HEVCContext *s)
     arg[0] = 0;
     arg[1] = 1;
 
-    uint64_t* slice_time = &s->statsctx.slice_time;
-    FFMPEG_TIME_BEGINN(slice_time);
+    // Extract these measurements no matter what
+    uint64_t slice_start_time = AV_READ_TIME();
     s->avctx->execute(s->avctx, hls_decode_entry, arg, ret , 1, sizeof(int));
-    FFMPEG_TIME_END(slice_time);
+    s->statsctx.slice_time += AV_READ_TIME() - slice_start_time;
+
 
     return ret[0];
 }
@@ -3258,9 +3259,9 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
     // int frame_num = avctx->frame_number + 1; // Does not work as expected, returns "0" 3 times at te beginning
     AVStatsContext* stats = avpriv_reset_stats_ctx(&s->statsctx);
     s->HEVClc->cc.statsctx = stats;
-    uint64_t* frame = &stats->frame_time;
 
-    FFMPEG_TIME_BEGINN(frame);
+    // Extract these metrics no matter what
+    uint64_t frame_start_time = AV_READ_TIME();
 
     if (!avpkt->size) {
         ret = ff_hevc_output_frame(s, data, 1);
@@ -3314,7 +3315,8 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
         *got_output = 1;
     }
 
-    FFMPEG_TIME_END(frame);
+    stats->frame_time += AV_READ_TIME() - frame_start_time;
+
     frame_number++;
     frame_num = frame_number;
     FFMPEG_EXTRACT_METRICS(stats->frame_number = frame_num);
