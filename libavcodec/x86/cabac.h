@@ -306,7 +306,7 @@ static av_always_inline int get_cabac_bypass_x86(CABACContext *c)
 static av_always_inline int get_cabac_bypass_x86_2(CABACContext *c)
 {
     FFMPEG_EXTRACT_METRICS(const uint8_t* cur_byte_count = c->bytestream);
-    FFMPEG_MEASURE_CABAC(uint64_t* cabac = &c->statsctx->cabac_time);
+    uint64_t* cabac = &c->statsctx->cabac_time;
     FFMPEG_CABAC_TIME_BEGIN(cabac, c->statsctx);
 
     int ret = get_cabac_bypass_x86(c);
