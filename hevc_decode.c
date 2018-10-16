@@ -1,12 +1,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include<signal.h>
 
 #include "libavutil/debug.h"
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 #include "libavdevice/avdevice.h"
 #include "libavutil/avutil.h"
+
+AVFormatContext* format_context;
+AVFrame* frame;
+AVPacket* packet;
+AVCodecContext* codec_context;
+
+int log_initialized_flag = 0;
+
+void clean_up()
+{
+    if(format_context) {
+        avformat_close_input(&format_context);
+        avformat_free_context(format_context);
+    }
+    if(packet) {
+        av_packet_free(&packet);
+    }
+    if(frame) {
+        av_frame_free(&frame);
+    }
+    if(codec_context) {
+        avcodec_free_context(&codec_context);
+    }
+}
+
+void signal_abort(int signo)
+{
+    if(log_initialized_flag) {
+        puts("Received SIGINT or SIGTERM. Exiting.");
+        avpriv_finalize_log();
+        clean_up();
+        exit(0);
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -17,14 +52,18 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
+    signal(SIGINT, signal_abort);
+    signal(SIGTERM, signal_abort);
+
     char* file_name = argv[1];
 
     avdevice_register_all();
 
-    AVFormatContext* format_context = avformat_alloc_context();
+    format_context = avformat_alloc_context();
 
     res = avformat_open_input(&format_context, file_name, NULL, NULL);
     if (res != 0) {
+        puts("Input file could not be opened.");
         exit(1);
     }
     printf("Format %s: duration %ld us, bit_rate %ld\n", format_context->iformat->long_name, format_context->duration, format_context->bit_rate);
@@ -39,14 +78,15 @@ int main(int argc, char* argv[])
     AVCodec* codec = avcodec_find_decoder(codec_parameters->codec_id);
     printf("Video Codec [%s]: resolution %d x %d\n", codec->name, codec_parameters->width, codec_parameters->height);
 
-    AVCodecContext* codec_context = avcodec_alloc_context3(codec);
+    codec_context = avcodec_alloc_context3(codec);
     avcodec_parameters_to_context(codec_context, codec_parameters);
     avcodec_open2(codec_context, codec, NULL);
 
-    AVFrame* frame = av_frame_alloc();
-    AVPacket* packet = av_packet_alloc();
+    frame = av_frame_alloc();
+    packet = av_packet_alloc();
 
     avpriv_init_log(file_name);
+    log_initialized_flag = 1;
 
     uint64_t decode_loop_time_v;
     uint64_t* decode_loop_time = &decode_loop_time_v;
@@ -73,16 +113,13 @@ int main(int argc, char* argv[])
         }
         av_packet_unref(packet);
     }
+
     FFMPEG_TIME_END(decode_loop_time);
     fprintf(stderr, "\nDecoding took %f seconds\n", (double)(decode_loop_time_v) / (1000000000.0 * CPU_BASE_FREQ));
 
-    avformat_close_input(&format_context);
-    avformat_free_context(format_context);
-    av_packet_free(&packet);
-    av_frame_free(&frame);
-    avcodec_free_context(&codec_context);
-
     avpriv_finalize_log();
+
+    clean_up();
 
     return 0;
 }
