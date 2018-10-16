@@ -96,6 +96,8 @@ typedef struct
     uint64_t pcm_included_time;
 } AVStatsContext;
 
+void avpriv_push_back_stats(AVStatsContext* stats);
+
 AVStatsContext* avpriv_reset_stats_ctx(AVStatsContext* ctx);
 void avpriv_log_stats_ctx(AVStatsContext* ctx);
 

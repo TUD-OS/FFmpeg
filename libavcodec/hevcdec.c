@@ -3324,7 +3324,7 @@ static int hevc_decode_frame(AVCodecContext *avctx, void *data, int *got_output,
     FFMPEG_EXTRACT_METRICS(stats->bit_depth = s->ps.sps->bit_depth);
     FFMPEG_EXTRACT_METRICS(stats->ctb_size = s->ps.sps->log2_ctb_size);
 
-    avpriv_log_stats_ctx(stats);
+    avpriv_push_back_stats(stats);
 
     fprintf(stderr, "\r Decoded frame %u", frame_num);
 

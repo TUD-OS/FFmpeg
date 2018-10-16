@@ -8,6 +8,9 @@
 static FILE* logfile_;
 static char logfile_name_[256];
 
+static size_t stats_list_idx_max = 8192;
+static AVStatsContext* stats_list;
+static size_t stats_list_idx = 0;
 
 AVStatsContext* avpriv_reset_stats_ctx(AVStatsContext* ctx)
 {
@@ -100,9 +103,24 @@ void avpriv_log(const char *message)
 
 void avpriv_finalize_log(void)
 {
+    printf("Writing log: %lu items\n", stats_list_idx);
+    for(size_t i = 0; i < stats_list_idx; i++) {
+        avpriv_log_stats_ctx(&stats_list[i]);
+    }
+    free(stats_list);
     int result = fclose(logfile_);
     if (result != 0) {
         avpriv_log_errno("Could not close log");
         exit(EXIT_FAILURE);
     }
+}
+
+void avpriv_push_back_stats(AVStatsContext *stats)
+{
+    if (stats_list_idx >= stats_list_idx_max) {
+        stats_list_idx_max *= 2;
+        stats_list = (AVStatsContext*)realloc(stats_list, stats_list_idx_max * sizeof(AVStatsContext));
+    }
+    memcpy(&stats_list[stats_list_idx], stats, sizeof (AVStatsContext));
+    stats_list_idx++;
 }
