@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
         puts("Input file could not be opened.");
         exit(1);
     }
-    printf("Format %s: duration %ld us, bit_rate %ld\n", format_context->iformat->long_name, format_context->duration, format_context->bit_rate);
+    printf("Filename: %s\nFormat %s: duration %ld ns, bit_rate %ld\n", file_name, format_context->iformat->long_name, format_context->duration, format_context->bit_rate);
 
     res = avformat_find_stream_info(format_context, NULL);
     if (res != 0) {
