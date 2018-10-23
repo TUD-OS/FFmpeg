@@ -1103,6 +1103,11 @@ void ff_hevc_hls_residual_coding(HEVCContext *s, int x0, int y0,
             log2_trafo_size <= s->ps.pps->log2_max_transform_skip_block_size) {
             transform_skip_flag = hevc_transform_skip_flag_decode(s, c_idx);
         }
+        FFMPEG_EXTRACT_METRICS(
+            do{
+                if (transform_skip_flag){s->statsctx.tu_transform_skip_count++;}
+            } while(0)
+        );
 
         if (c_idx == 0) {
             qp = qp_y + s->ps.sps->qp_bd_offset;
