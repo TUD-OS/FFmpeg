@@ -1322,7 +1322,7 @@ do {                                                                            
         int log2_min_tu_size = s->ps.sps->log2_min_tb_size;
         int min_tu_width     = s->ps.sps->min_tb_width;
         int cbf_luma         = 1;
-        s->statsctx.tu_count++;
+        FFMPEG_EXTRACT_METRICS(s->statsctx.tu_count++);
 
         if (lc->cu.pred_mode == MODE_INTRA || trafo_depth != 0 ||
             cbf_cb[0] || cbf_cr[0] ||
