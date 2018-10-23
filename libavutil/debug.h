@@ -55,8 +55,26 @@ typedef struct
     uint32_t bit_depth;
     uint32_t ctb_size; // Same for ALL CTUs 64/32/16
     uint32_t tu_count;
-    uint32_t inter_pu_count;
+
     uint32_t intra_pu_count;
+    uint32_t intra_planar_32_count;
+    uint32_t intra_planar_16_count;
+    uint32_t intra_planar_8_count;
+    uint32_t intra_planar_4_count;
+    uint32_t intra_dc_32_count;
+    uint32_t intra_dc_16_count;
+    uint32_t intra_dc_8_count;
+    uint32_t intra_dc_4_count;
+    uint32_t intra_angular_32_count;
+    uint32_t intra_angular_16_count;
+    uint32_t intra_angular_8_count;
+    uint32_t intra_angular_4_count;
+
+    uint32_t inter_pu_count;
+    uint32_t inter_uni_count;
+    uint32_t inter_bi_count;
+    uint32_t inter_merge_count;
+
     uint32_t deblock_luma_edge_count;
     uint32_t deblock_chroma_edge_count;
     uint32_t sao_band_count;
@@ -75,6 +93,7 @@ typedef struct
     uint64_t deblock_time; // ff_hevc_deblocking_boundary_strengths, deblocking_filter_CTB
     uint64_t sao_time; // hls_sao_param, sao_filter_CTB
     // sao_time and deblocking_filter_CTB NOT included in CU time!
+    uint64_t metadata_time; // hevc_decode_extradata, ff_hevc_decode_nal_*ps, hls_slice_header, hevc_frame_start
 
     // Cabac exclusion
     uint64_t cabac_intra_cu_time;
@@ -83,6 +102,7 @@ typedef struct
     uint64_t cabac_transform_time;
     uint64_t cabac_deblock_time;
     uint64_t cabac_sao_time;
+    uint64_t cabac_metadata_time;
 
     int cabac_intra_cu_flag;
     int cabac_inter_cu_flag;
@@ -90,6 +110,7 @@ typedef struct
     int cabac_transform_flag;
     int cabac_deblock_flag;
     int cabac_sao_flag;
+    int cabac_metadata_flag;
 
     // Other exclusions
     uint64_t transform_included_time;
@@ -229,6 +250,8 @@ static av_always_inline av_unused uint64_t rtdsc_to_ns(uint64_t cycles) {
             stats->cabac_deblock_time += diff_##measurement; \
         } else if (stats->cabac_sao_flag) { \
             stats->cabac_sao_time += diff_##measurement; \
+        } else if (stats->cabac_metadata_flag) { \
+            stats->cabac_metadata_time += diff_##measurement; \
         } \
     } while (0)
 

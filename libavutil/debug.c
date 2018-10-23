@@ -21,7 +21,7 @@ AVStatsContext* avpriv_reset_stats_ctx(AVStatsContext* ctx)
 void avpriv_log_stats_ctx(AVStatsContext* ctx)
 {
     /* TODO: Improve*/
-#define LOG_LINE_LENGTH 256
+#define LOG_LINE_LENGTH 512
     char line[LOG_LINE_LENGTH];
 
     ctx->intra_cu_time -= ctx->cabac_intra_cu_time;
@@ -30,6 +30,7 @@ void avpriv_log_stats_ctx(AVStatsContext* ctx)
     ctx->transform_time -= ctx->cabac_transform_time;
     ctx->deblock_time -= ctx->cabac_deblock_time;
     ctx->sao_time -= ctx->cabac_sao_time;
+    ctx->metadata_time -= ctx->cabac_metadata_time;
 
     ctx->transform_time -= ctx->transform_included_time;
     ctx->pcm_cu_time -= ctx->pcm_included_time;
@@ -45,6 +46,7 @@ void avpriv_log_stats_ctx(AVStatsContext* ctx)
     ctx->transform_time = rtdsc_to_ns(ctx->transform_time);
     ctx->deblock_time = rtdsc_to_ns(ctx->deblock_time);
     ctx->sao_time = rtdsc_to_ns(ctx->sao_time);
+    ctx->metadata_time = rtdsc_to_ns(ctx->metadata_time);
 #endif
 #if PRINT_MS
     ctx->frame_time = ns_to_ms(ctx->frame_time);
@@ -57,12 +59,16 @@ void avpriv_log_stats_ctx(AVStatsContext* ctx)
     ctx->transform_time = ns_to_ms(ctx->transform_time);
     ctx->deblock_time = ns_to_ms(ctx->deblock_time);
     ctx->sao_time = ns_to_ms(ctx->sao_time);
+    ctx->metadata_time = ns_to_ms(ctx->metadata_time);
 #endif
     snprintf(line, LOG_LINE_LENGTH
-             , "%" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64
-             ", %d, %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32
-             , ctx->frame_number, ctx->frame_time, ctx->slice_time, ctx->cabac_time, ctx->intra_cu_time, ctx->inter_cu_time, ctx->pcm_cu_time, ctx->transform_time, ctx->deblock_time, ctx->sao_time
-             , ctx->slice_type, ctx->slice_size, ctx->cabac_size, ctx->cu_count, ctx->inter_cu_count, ctx->intra_cu_count, ctx->skip_cu_count, ctx->pcm_cu_count, ctx->pixel_count, ctx->bit_depth, ctx->ctb_size, ctx->tu_count, ctx->inter_pu_count, ctx->intra_pu_count, ctx->deblock_luma_edge_count, ctx->deblock_chroma_edge_count, ctx->sao_band_count, ctx->sao_edge_count
+             , "%" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64
+             ", %d, %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32
+             , ctx->frame_number, ctx->frame_time, ctx->slice_time, ctx->cabac_time, ctx->intra_cu_time, ctx->inter_cu_time, ctx->pcm_cu_time, ctx->transform_time, ctx->deblock_time, ctx->sao_time, ctx->metadata_time
+             , ctx->slice_type, ctx->slice_size, ctx->cabac_size, ctx->cu_count, ctx->inter_cu_count, ctx->intra_cu_count, ctx->skip_cu_count, ctx->pcm_cu_count, ctx->pixel_count, ctx->bit_depth, ctx->ctb_size, ctx->tu_count, ctx->inter_pu_count, ctx->intra_pu_count
+             , ctx->inter_uni_count, ctx->inter_bi_count, ctx->inter_merge_count
+             , ctx->intra_planar_32_count, ctx->intra_planar_16_count, ctx->intra_planar_8_count, ctx->intra_planar_4_count, ctx->intra_dc_32_count, ctx->intra_dc_16_count, ctx->intra_dc_8_count, ctx->intra_dc_4_count, ctx->intra_angular_32_count, ctx->intra_angular_16_count, ctx->intra_angular_8_count, ctx->intra_angular_4_count
+             , ctx->deblock_luma_edge_count, ctx->deblock_chroma_edge_count, ctx->sao_band_count, ctx->sao_edge_count
              );
     avpriv_log(line);
 }
@@ -92,9 +98,14 @@ void avpriv_init_log(const char* input_file)
         avpriv_log_errno(msg);
         exit(EXIT_FAILURE);
     }
-    avpriv_log("frame_num, frame_time, slice_time, cabac_time, intra_cu_time, inter_cu_time, pcm_cu_time, transform_time, deblock_time, sao_time"
-               ", slice_type, slice_size, cabac_size, cu_count, inter_cu_count, intra_cu_count, skip_cu_count, pcm_cu_count, pixel_count, bit_depth, ctb_size, tu_count, inter_pu_count, intra_pu_count, deblock_luma_edge_count, deblock_chroma_edge_count, sao_band_count, sao_edge_count"
+
+    avpriv_log("frame_num, frame_time, slice_time, cabac_time, intra_cu_time, inter_cu_time, pcm_cu_time, transform_time, deblock_time, sao_time, metadata_time"
+               ", slice_type, slice_size, cabac_size, cu_count, inter_cu_count, intra_cu_count, skip_cu_count, pcm_cu_count, pixel_count, bit_depth, ctb_size, tu_count, inter_pu_count, intra_pu_count"
+               ", inter_uni_count, inter_bi_count, inter_merge_count"
+               ", intra_planar_32_count, intra_planar_16_count, intra_planar_8_count, intra_planar_4_count, intra_dc_32_count, intra_dc_16_count, intra_dc_8_count, intra_dc_4_count, intra_angular_32_count, intra_angular_16_count, intra_angular_8_count, intra_angular_4_count"
+               ", deblock_luma_edge_count, deblock_chroma_edge_count, sao_band_count, sao_edge_count"
                );
+
     stats_list = (AVStatsContext*)malloc(stats_list_idx_max * sizeof(AVStatsContext));
 }
 

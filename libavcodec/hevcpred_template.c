@@ -21,6 +21,7 @@
  */
 
 #include "libavutil/pixdesc.h"
+#include "libavutil/debug.h"
 
 #include "bit_depth_template.c"
 #include "hevcpred.h"
@@ -69,6 +70,11 @@ do {                                  \
                 AV_WN4P(&ptr[i], a);                                           \
             else                                                               \
                 a = PIXEL_SPLAT_X4(ptr[i + 3])
+
+    uint64_t* transform_time = &s->statsctx.transform_included_time;
+    uint64_t* intra_time = &s->statsctx.intra_cu_time;
+    FFMPEG_TIME_BEGINN(intra_time);
+    FFMPEG_TIME_BEGINN(transform_time);
 
     HEVCLocalContext *lc = s->HEVClc;
     int i;
@@ -329,19 +335,48 @@ do {                                  \
 
     switch (mode) {
     case INTRA_PLANAR:
+        FFMPEG_EXTRACT_METRICS(
+            do {
+                if(log2_size == 5) {s->statsctx.intra_planar_32_count++;}
+                else if (log2_size == 4) {s->statsctx.intra_planar_16_count++;}
+                else if(log2_size == 3) {s->statsctx.intra_planar_8_count++;}
+                else if(log2_size == 2) {s->statsctx.intra_planar_4_count++;}
+            }
+            while(0)
+        );
         s->hpc.pred_planar[log2_size - 2]((uint8_t *)src, (uint8_t *)top,
                                           (uint8_t *)left, stride);
         break;
     case INTRA_DC:
+        FFMPEG_EXTRACT_METRICS(
+            do {
+                if(log2_size == 5) {s->statsctx.intra_dc_32_count++;}
+                else if (log2_size == 4) {s->statsctx.intra_dc_16_count++;}
+                else if(log2_size == 3) {s->statsctx.intra_dc_8_count++;}
+                else if(log2_size == 2) {s->statsctx.intra_dc_4_count++;}
+            }
+            while(0)
+        );
         s->hpc.pred_dc((uint8_t *)src, (uint8_t *)top,
                        (uint8_t *)left, stride, log2_size, c_idx);
         break;
     default:
+        FFMPEG_EXTRACT_METRICS(
+            do {
+                if(log2_size == 5) {s->statsctx.intra_angular_32_count++;}
+                else if (log2_size == 4) {s->statsctx.intra_angular_16_count++;}
+                else if(log2_size == 3) {s->statsctx.intra_angular_8_count++;}
+                else if(log2_size == 2) {s->statsctx.intra_angular_4_count++;}
+            }
+            while(0)
+        );
         s->hpc.pred_angular[log2_size - 2]((uint8_t *)src, (uint8_t *)top,
                                            (uint8_t *)left, stride, c_idx,
                                            mode);
         break;
     }
+    FFMPEG_TIME_END(intra_time);
+    FFMPEG_TIME_END(transform_time);
 }
 
 #define INTRA_PRED(size)                                                            \

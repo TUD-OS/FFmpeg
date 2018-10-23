@@ -1814,6 +1814,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0,
         lc->pu.merge_flag = ff_hevc_merge_flag_decode(s);
 
     if (skip_flag || lc->pu.merge_flag) {
+        FFMPEG_EXTRACT_METRICS(s->statsctx.inter_merge_count++);
         if (s->sh.max_num_merge_cand > 1)
             merge_idx = ff_hevc_merge_idx_decode(s);
         else
@@ -1847,6 +1848,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0,
     }
 
     if (current_mv.pred_flag == PF_L0) {
+        FFMPEG_EXTRACT_METRICS(s->statsctx.inter_uni_count++);
         int x0_c = x0 >> s->ps.sps->hshift[1];
         int y0_c = y0 >> s->ps.sps->vshift[1];
         int nPbW_c = nPbW >> s->ps.sps->hshift[1];
@@ -1866,6 +1868,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0,
                           s->sh.chroma_weight_l0[current_mv.ref_idx[0]][1], s->sh.chroma_offset_l0[current_mv.ref_idx[0]][1]);
         }
     } else if (current_mv.pred_flag == PF_L1) {
+        FFMPEG_EXTRACT_METRICS(s->statsctx.inter_uni_count++);
         int x0_c = x0 >> s->ps.sps->hshift[1];
         int y0_c = y0 >> s->ps.sps->vshift[1];
         int nPbW_c = nPbW >> s->ps.sps->hshift[1];
@@ -1886,6 +1889,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0,
                           s->sh.chroma_weight_l1[current_mv.ref_idx[1]][1], s->sh.chroma_offset_l1[current_mv.ref_idx[1]][1]);
         }
     } else if (current_mv.pred_flag == PF_BI) {
+        FFMPEG_EXTRACT_METRICS(s->statsctx.inter_bi_count++);
         int x0_c = x0 >> s->ps.sps->hshift[1];
         int y0_c = y0 >> s->ps.sps->vshift[1];
         int nPbW_c = nPbW >> s->ps.sps->hshift[1];
@@ -2934,7 +2938,14 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
             if (ret < 0)
                 goto fail;
         }
+
+        uint64_t* metadata_time = &s->statsctx.metadata_time;
+        FFMPEG_TIME_BEGINN(metadata_time);
+        s->statsctx.cabac_metadata_flag = 1;
         ret = ff_hevc_decode_nal_vps(gb, s->avctx, &s->ps);
+        s->statsctx.cabac_metadata_flag = 0;
+        FFMPEG_TIME_END(metadata_time);
+
         if (ret < 0)
             goto fail;
         break;
@@ -2947,8 +2958,14 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
             if (ret < 0)
                 goto fail;
         }
+
+        uint64_t* metadata_time2 = &s->statsctx.metadata_time;
+        FFMPEG_TIME_BEGINN(metadata_time2);
+        s->statsctx.cabac_metadata_flag = 1;
         ret = ff_hevc_decode_nal_sps(gb, s->avctx, &s->ps,
                                      s->apply_defdispwin);
+        s->statsctx.cabac_metadata_flag = 0;
+        FFMPEG_TIME_END(metadata_time2);
         if (ret < 0)
             goto fail;
         break;
@@ -2961,7 +2978,14 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
             if (ret < 0)
                 goto fail;
         }
+
+        uint64_t* metadata_time3 = &s->statsctx.metadata_time;
+        FFMPEG_TIME_BEGINN(metadata_time3);
+        s->statsctx.cabac_metadata_flag = 1;
         ret = ff_hevc_decode_nal_pps(gb, s->avctx, &s->ps);
+        s->statsctx.cabac_metadata_flag = 0;
+        FFMPEG_TIME_END(metadata_time3);
+
         if (ret < 0)
             goto fail;
         break;
@@ -2975,7 +2999,14 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
             if (ret < 0)
                 goto fail;
         }
+
+        uint64_t* metadata_time4 = &s->statsctx.metadata_time;
+        FFMPEG_TIME_BEGINN(metadata_time4);
+        s->statsctx.cabac_metadata_flag = 1;
         ret = ff_hevc_decode_nal_sei(gb, s->avctx, &s->sei, &s->ps, s->nal_unit_type);
+        s->statsctx.cabac_metadata_flag = 0;
+        FFMPEG_TIME_END(metadata_time4);
+
         if (ret < 0)
             goto fail;
         break;
@@ -2996,9 +3027,16 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
     case HEVC_NAL_RASL_N:
     case HEVC_NAL_RASL_R:
 
+        {
+        uint64_t* metadata_time_vcl = &s->statsctx.metadata_time;
+        FFMPEG_TIME_BEGINN(metadata_time_vcl);
+        s->statsctx.cabac_metadata_flag = 1;
         ret = hls_slice_header(s);
+        s->statsctx.cabac_metadata_flag = 0;
+        FFMPEG_TIME_END(metadata_time_vcl);
         if (ret < 0)
             return ret;
+        }
 
         if (
             (s->avctx->skip_frame >= AVDISCARD_BIDIR && s->sh.slice_type == HEVC_SLICE_B) ||
@@ -3026,7 +3064,12 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
                     s->max_ra = INT_MIN;
             }
 
+            uint64_t* metadata_time_frame_ops = &s->statsctx.metadata_time;
+            FFMPEG_TIME_BEGINN(metadata_time_frame_ops);
+            s->statsctx.cabac_metadata_flag = 1;
             ret = hevc_frame_start(s);
+            s->statsctx.cabac_metadata_flag = 0;
+            FFMPEG_TIME_END(metadata_time_frame_ops);
             if (ret < 0)
                 return ret;
         } else if (!s->ref) {
@@ -3227,13 +3270,19 @@ static int verify_md5(HEVCContext *s, AVFrame *frame)
 
 static int hevc_decode_extradata(HEVCContext *s, uint8_t *buf, int length, int first)
 {
+    uint64_t* metadata_time = &s->statsctx.metadata_time;
+    FFMPEG_TIME_BEGINN(metadata_time);
+    s->statsctx.cabac_metadata_flag = 1;
     int ret, i;
 
     ret = ff_hevc_decode_extradata(buf, length, &s->ps, &s->sei, &s->is_nalff,
                                    &s->nal_length_size, s->avctx->err_recognition,
                                    s->apply_defdispwin, s->avctx);
-    if (ret < 0)
+    if (ret < 0) {
+        s->statsctx.cabac_metadata_flag = 0;
+        FFMPEG_TIME_END(metadata_time);
         return ret;
+    }
 
     /* export stream parameters from the first SPS */
     for (i = 0; i < FF_ARRAY_ELEMS(s->ps.sps_list); i++) {
@@ -3243,7 +3292,8 @@ static int hevc_decode_extradata(HEVCContext *s, uint8_t *buf, int length, int f
             break;
         }
     }
-
+    s->statsctx.cabac_metadata_flag = 0;
+    FFMPEG_TIME_END(metadata_time);
     return 0;
 }
 
