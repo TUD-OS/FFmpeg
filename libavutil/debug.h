@@ -54,7 +54,12 @@ typedef struct
     uint32_t pcm_cu_count;
     uint32_t bit_depth;
     uint32_t ctb_size; // Same for ALL CTUs 64/32/16
+
     uint32_t tu_count;
+    uint32_t tu_32_count;
+    uint32_t tu_16_count;
+    uint32_t tu_8_count;
+    uint32_t tu_4_count;
 
     uint32_t intra_pu_count;
     uint32_t intra_planar_32_count;

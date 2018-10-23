@@ -1322,7 +1322,16 @@ do {                                                                            
         int log2_min_tu_size = s->ps.sps->log2_min_tb_size;
         int min_tu_width     = s->ps.sps->min_tb_width;
         int cbf_luma         = 1;
-        FFMPEG_EXTRACT_METRICS(s->statsctx.tu_count++);
+        FFMPEG_EXTRACT_METRICS(
+            do {
+                s->statsctx.tu_count++;
+                if(log2_trafo_size == 5) {s->statsctx.tu_32_count++;}
+                else if (log2_trafo_size == 4) {s->statsctx.tu_16_count++;}
+                else if(log2_trafo_size == 3) {s->statsctx.tu_8_count++;}
+                else if(log2_trafo_size == 2) {s->statsctx.tu_4_count++;}
+            }
+            while(0)
+        );
 
         if (lc->cu.pred_mode == MODE_INTRA || trafo_depth != 0 ||
             cbf_cb[0] || cbf_cr[0] ||
