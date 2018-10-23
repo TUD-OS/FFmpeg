@@ -95,6 +95,7 @@ void avpriv_init_log(const char* input_file)
     avpriv_log("frame_num, frame_time, slice_time, cabac_time, intra_cu_time, inter_cu_time, pcm_cu_time, transform_time, deblock_time, sao_time"
                ", slice_type, slice_size, cabac_size, cu_count, inter_cu_count, intra_cu_count, skip_cu_count, pcm_cu_count, pixel_count, bit_depth, ctb_size, tu_count, inter_pu_count, intra_pu_count, deblock_luma_edge_count, deblock_chroma_edge_count, sao_band_count, sao_edge_count"
                );
+    stats_list = (AVStatsContext*)malloc(stats_list_idx_max * sizeof(AVStatsContext));
 }
 
 void avpriv_log(const char *message)
