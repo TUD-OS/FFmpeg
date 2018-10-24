@@ -535,7 +535,7 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
             const int bs0 = s->vertical_bs[(x +  y      * s->bs_width) >> 2];
             const int bs1 = s->vertical_bs[(x + (y + 4) * s->bs_width) >> 2];
             if (bs0 || bs1) {
-                FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_luma_edge_count++);
+                FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_luma_vert_edge_count++);
                 const int qp = (get_qPy(s, x - 1, y)     + get_qPy(s, x, y)     + 1) >> 1;
 
                 beta = betatable[av_clip(qp + beta_offset, 0, MAX_QP)];
@@ -566,7 +566,7 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
             const int bs0 = s->horizontal_bs[( x      + y * s->bs_width) >> 2];
             const int bs1 = s->horizontal_bs[((x + 4) + y * s->bs_width) >> 2];
             if (bs0 || bs1) {
-                FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_luma_edge_count++);
+                FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_luma_hor_edge_count++);
                 const int qp = (get_qPy(s, x, y - 1)     + get_qPy(s, x, y)     + 1) >> 1;
 
                 tc_offset   = x >= x0 ? cur_tc_offset : left_tc_offset;
@@ -604,7 +604,7 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
                     const int bs1 = s->vertical_bs[(x + (y + (4 * v)) * s->bs_width) >> 2];
 
                     if ((bs0 == 2) || (bs1 == 2)) {
-                        FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_chroma_edge_count++);
+                        FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_chroma_vert_edge_count++);
                         const int qp0 = (get_qPy(s, x - 1, y)           + get_qPy(s, x, y)           + 1) >> 1;
                         const int qp1 = (get_qPy(s, x - 1, y + (4 * v)) + get_qPy(s, x, y + (4 * v)) + 1) >> 1;
 
@@ -638,7 +638,7 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
                     const int bs0 = s->horizontal_bs[( x          + y * s->bs_width) >> 2];
                     const int bs1 = s->horizontal_bs[((x + 4 * h) + y * s->bs_width) >> 2];
                     if ((bs0 == 2) || (bs1 == 2)) {
-                        FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_chroma_edge_count++);
+                        FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_chroma_hor_edge_count++);
                         const int qp0 = bs0 == 2 ? (get_qPy(s, x,           y - 1) + get_qPy(s, x,           y) + 1) >> 1 : 0;
                         const int qp1 = bs1 == 2 ? (get_qPy(s, x + (4 * h), y - 1) + get_qPy(s, x + (4 * h), y) + 1) >> 1 : 0;
 
@@ -669,6 +669,7 @@ static void deblocking_filter_CTB(HEVCContext *s, int x0, int y0)
 static int boundary_strength(HEVCContext *s, MvField *curr, MvField *neigh,
                              RefPicList *neigh_refPicList)
 {
+    FFMPEG_EXTRACT_METRICS(s->statsctx.deblock_boundary_checks_count++);
     if (curr->pred_flag == PF_BI &&  neigh->pred_flag == PF_BI) {
         // same L0 and L1
         if (s->ref->refPicList[0].list[curr->ref_idx[0]] == neigh_refPicList[0].list[neigh->ref_idx[0]]  &&

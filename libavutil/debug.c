@@ -63,13 +63,13 @@ void avpriv_log_stats_ctx(AVStatsContext* ctx)
 #endif
     snprintf(line, LOG_LINE_LENGTH
              , "%" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64
-             ", %d, %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32
+             ", %d, %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32  ", %" PRIu32
              , ctx->frame_number, ctx->frame_time, ctx->slice_time, ctx->cabac_time, ctx->intra_cu_time, ctx->inter_cu_time, ctx->pcm_cu_time, ctx->transform_time, ctx->deblock_time, ctx->sao_time, ctx->metadata_time
              , ctx->slice_type, ctx->slice_size, ctx->cabac_size, ctx->cu_count, ctx->inter_cu_count, ctx->intra_cu_count, ctx->skip_cu_count, ctx->pcm_cu_count, ctx->pixel_count, ctx->bit_depth, ctx->ctb_size, ctx->tu_count, ctx->inter_pu_count, ctx->intra_pu_count
              , ctx->inter_uni_count, ctx->inter_bi_count, ctx->inter_merge_count
              , ctx->intra_planar_32_count, ctx->intra_planar_16_count, ctx->intra_planar_8_count, ctx->intra_planar_4_count, ctx->intra_dc_32_count, ctx->intra_dc_16_count, ctx->intra_dc_8_count, ctx->intra_dc_4_count, ctx->intra_angular_32_count, ctx->intra_angular_16_count, ctx->intra_angular_8_count, ctx->intra_angular_4_count
              , ctx->tu_32_count, ctx->tu_16_count, ctx->tu_8_count, ctx->tu_4_count, ctx->tu_transform_skip_count
-             , ctx->deblock_luma_edge_count, ctx->deblock_chroma_edge_count, ctx->sao_band_count, ctx->sao_edge_count
+             , ctx->deblock_boundary_checks_count, ctx->deblock_luma_vert_edge_count, ctx->deblock_luma_hor_edge_count, ctx->deblock_chroma_vert_edge_count, ctx->deblock_chroma_hor_edge_count, ctx->sao_band_count, ctx->sao_edge_count
              );
     avpriv_log(line);
 }
@@ -105,7 +105,7 @@ void avpriv_init_log(const char* input_file)
                ", inter_uni_count, inter_bi_count, inter_merge_count"
                ", intra_planar_32_count, intra_planar_16_count, intra_planar_8_count, intra_planar_4_count, intra_dc_32_count, intra_dc_16_count, intra_dc_8_count, intra_dc_4_count, intra_angular_32_count, intra_angular_16_count, intra_angular_8_count, intra_angular_4_count"
                ", tu_32_count, tu_16_count, tu_8_count, tu_4_count, tu_transform_skip_count"
-               ", deblock_luma_edge_count, deblock_chroma_edge_count, sao_band_count, sao_edge_count"
+               ", deblock_boudary_checks_count, deblock_luma_vert_edge_count, deblock_luma_hor_edge_count, deblock_chroma_vert_edge_count, deblock_chroma_hor_edge_count, sao_band_count, sao_edge_count"
                );
 
     stats_list = (AVStatsContext*)malloc(stats_list_idx_max * sizeof(AVStatsContext));
