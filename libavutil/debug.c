@@ -82,11 +82,15 @@ void avpriv_init_log(const char* input_file)
     } else {
         char* name_copy = malloc(strlen(input_file));
         strcpy(name_copy, input_file);
-#if EXTRACT_METRICS
-        snprintf(logfile_name_, 256, "log/%s.csv", basename(name_copy));
+#if !EXTRACT_METRICS && !MEASURE_TIME
+        snprintf(logfile_name_, 256, "log/%s_no_metrics_no_time.csv", basename(name_copy));
+#elif !EXTRACT_METRICS
+        snprintf(logfile_name_, 256, "log/%s_no_metrics.csv", basename(name_copy));
+#elif !MEASURE_TIME
+        snprintf(logfile_name_, 256, "log/%s_no_time.csv", basename(name_copy));
 #else
-        snprintf(logfile_name_, 256, "log/%s_no_extract.csv", basename(name_copy));
-#endif // EXTRACT_METRICS
+        snprintf(logfile_name_, 256, "log/%s.csv", basename(name_copy));
+#endif
         free(name_copy);
     }
 

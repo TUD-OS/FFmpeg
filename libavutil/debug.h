@@ -24,9 +24,14 @@
 /* Base frequency of the local CPU, only used on RDTSC time measureing */
 #define CPU_BASE_FREQ 4.0
 
+/* Whether to measure cabac bits, creates large overhead if enabled*/
+#if EXTRACT_METRICS
+#define MEASURE_CABAC 1
+#endif
+
 /* Whether to measure cabac related times, creates large overhead if enabled */
 #if MEASURE_TIME
-#define MEASURE_CABAC 1
+#define MEASURE_CABAC_TIME 1
 #endif
 
 /* Print times in milliseconds rather than nanoseconds */
@@ -239,7 +244,11 @@ static av_always_inline av_unused uint64_t rtdsc_to_ns(uint64_t cycles) {
 
 #if MEASURE_CABAC
 #define FFMPEG_MEASURE_CABAC(x) x
+#else
+#define FFMPEG_MEASURE_CABAC(x)
+#endif // MEASURE_CABAC
 
+#if MEASURE_CABAC_TIME
 #define FFMPEG_CABAC_TIME_BEGIN(measurement, statsctx) \
     uint64_t start_time_##measurement = AV_READ_TIME();
 
@@ -265,9 +274,8 @@ static av_always_inline av_unused uint64_t rtdsc_to_ns(uint64_t cycles) {
     } while (0)
 
 #else
-#define FFMPEG_MEASURE_CABAC(x)
 #define FFMPEG_CABAC_TIME_BEGIN(measurement, stats)
 #define FFMPEG_CABAC_TIME_END(measurement, stats)
-#endif // MEASURE_CABAC
+#endif // MEASURE_CABAC_TIME
 
 #endif // AVUTIL_DEBUG_H

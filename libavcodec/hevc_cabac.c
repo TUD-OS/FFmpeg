@@ -504,7 +504,7 @@ static void cabac_init_state(HEVCContext *s)
 
 int ff_hevc_cabac_init(HEVCContext *s, int ctb_addr_ts)
 {
-    FFMPEG_MEASURE_CABAC(uint64_t* cabac = &s->statsctx.cabac_time);
+    uint64_t* cabac = &s->statsctx.cabac_time;
     FFMPEG_CABAC_TIME_BEGIN(cabac, &s->statsctx);
     AVStatsContext* stats = &(s->statsctx);
     if (ctb_addr_ts == s->ps.pps->ctb_addr_rs_to_ts[s->sh.slice_ctb_addr_rs]) {
@@ -568,7 +568,7 @@ int ff_hevc_cabac_init(HEVCContext *s, int ctb_addr_ts)
 }
 
 
-#if MEASURE_CABAC
+#if MEASURE_CABAC || MEASURE_CABAC_TIME
 #define GET_CABAC(ctx) get_cabac2(&s->HEVClc->cc, &s->HEVClc->cabac_state[ctx])
 #else
 #define GET_CABAC(ctx) get_cabac(&s->HEVClc->cc, &s->HEVClc->cabac_state[ctx])
