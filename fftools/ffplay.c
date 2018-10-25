@@ -3265,7 +3265,8 @@ static void event_loop(VideoState *cur_stream)
             case SDLK_ESCAPE:
             case SDLK_q:
 		    FFMPEG_TIME_END(event_loop_time);
-		    av_log(NULL, AV_LOG_WARNING, "Main event loop time: %f s\n", (double)(event_loop_time_v) / (1000000000.0 * CPU_BASE_FREQ));
+                av_log(NULL, AV_LOG_WARNING, "Main event loop time: %f s\n", (double)(event_loop_time_v) / (1000000000.0 * CPU_BASE_FREQ));
+                avpriv_finalize_log();
                 do_exit(cur_stream);
                 break;
             case SDLK_f:
@@ -3443,6 +3444,7 @@ static void event_loop(VideoState *cur_stream)
         case FF_QUIT_EVENT:
 		FFMPEG_TIME_END(event_loop_time);
 		av_log(NULL, AV_LOG_WARNING, "Main event loop time: %f s\n",  (double)(event_loop_time_v) / (1000000000.0 * CPU_BASE_FREQ));
+        avpriv_finalize_log();
             do_exit(cur_stream);
             break;
         default:
@@ -3744,7 +3746,6 @@ int main(int argc, char **argv)
     avpriv_init_log(input_filename);
 
     event_loop(is);
-    avpriv_finalize_log();
 
     /* never returns */
 
