@@ -341,6 +341,9 @@ do {                                  \
                 else if (log2_size == 4) {s->statsctx.intra_planar_16_count++;}
                 else if(log2_size == 3) {s->statsctx.intra_planar_8_count++;}
                 else if(log2_size == 2) {s->statsctx.intra_planar_4_count++;}
+                else {
+                    avpriv_log_error("UNIDENTIFIED_INTRA_TB_SIZE!");
+                }
             }
             while(0)
         );
@@ -354,6 +357,9 @@ do {                                  \
                 else if (log2_size == 4) {s->statsctx.intra_dc_16_count++;}
                 else if(log2_size == 3) {s->statsctx.intra_dc_8_count++;}
                 else if(log2_size == 2) {s->statsctx.intra_dc_4_count++;}
+                else {
+                    avpriv_log_error("UNIDENTIFIED_INTRA_TB_SIZE!");
+                }
             }
             while(0)
         );
@@ -367,6 +373,9 @@ do {                                  \
                 else if (log2_size == 4) {s->statsctx.intra_angular_16_count++;}
                 else if(log2_size == 3) {s->statsctx.intra_angular_8_count++;}
                 else if(log2_size == 2) {s->statsctx.intra_angular_4_count++;}
+                else {
+                    avpriv_log_error("UNIDENTIFIED_INTRA_TB_SIZE!");
+                }
             }
             while(0)
         );

@@ -1329,6 +1329,9 @@ do {                                                                            
                 else if (log2_trafo_size == 4) {s->statsctx.tu_16_count++;}
                 else if(log2_trafo_size == 3) {s->statsctx.tu_8_count++;}
                 else if(log2_trafo_size == 2) {s->statsctx.tu_4_count++;}
+                else {
+                    avpriv_log_error("UNIDENTIFIED_TB_SIZE!");
+                }
             }
             while(0)
         );
