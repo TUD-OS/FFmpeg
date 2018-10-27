@@ -1823,7 +1823,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0,
         lc->pu.merge_flag = ff_hevc_merge_flag_decode(s);
 
     if (skip_flag || lc->pu.merge_flag) {
-        FFMPEG_EXTRACT_METRICS(s->statsctx.inter_merge_count++);
+        FFMPEG_EXTRACT_METRICS(s->statsctx.inter_merge_mv_count++);
         if (s->sh.max_num_merge_cand > 1)
             merge_idx = ff_hevc_merge_idx_decode(s);
         else
@@ -1832,6 +1832,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0,
         ff_hevc_luma_mv_merge_mode(s, x0, y0, nPbW, nPbH, log2_cb_size,
                                    partIdx, merge_idx, &current_mv);
     } else {
+        FFMPEG_EXTRACT_METRICS(s->statsctx.inter_regular_mv_count++);
         hevc_luma_mv_mvp_mode(s, x0, y0, nPbW, nPbH, log2_cb_size,
                               partIdx, merge_idx, &current_mv);
     }
@@ -1855,6 +1856,20 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0,
             return;
         hevc_await_progress(s, ref1, &current_mv.mv[1], y0, nPbH);
     }
+
+    FFMPEG_EXTRACT_METRICS(
+        do{
+            int bi_flag = current_mv.pred_flag == PF_BI;
+            if (nPbH == 64 && nPbW == 64) {s->statsctx.inter_64_count += 1+bi_flag;}
+            else if (nPbH == 32 && nPbW == 32) {s->statsctx.inter_32_count += 1+bi_flag;}
+            else if (nPbH == 16 && nPbW == 16) {s->statsctx.inter_16_count += 1+bi_flag;}
+            else if (nPbH == 8 && nPbW == 8) {s->statsctx.inter_8_count += 1+bi_flag;}
+            else {
+                avpriv_log_error("UNIDENTIFIED_PB_SIZE!");
+            }
+            // No 4x4 PB for inter coding
+        } while(0)
+    );
 
     if (current_mv.pred_flag == PF_L0) {
         FFMPEG_EXTRACT_METRICS(s->statsctx.inter_uni_count++);

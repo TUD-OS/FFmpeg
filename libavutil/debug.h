@@ -84,7 +84,12 @@ typedef struct
     uint32_t inter_pu_count;
     uint32_t inter_uni_count;
     uint32_t inter_bi_count;
-    uint32_t inter_merge_count;
+    uint32_t inter_merge_mv_count;
+    uint32_t inter_regular_mv_count;
+    uint32_t inter_64_count;
+    uint32_t inter_32_count;
+    uint32_t inter_16_count;
+    uint32_t inter_8_count;
 
     uint32_t deblock_boundary_checks_count;
     uint32_t deblock_luma_vert_edge_count;
